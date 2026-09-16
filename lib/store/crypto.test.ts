@@ -127,10 +127,25 @@ describe("sealing a payload", () => {
     // "suci" must fail the tag check, not succeed quietly.
     const key = await generateShareKey();
     const sealed = await sealWithShareKey("secret", key);
+
+    // Tamper in the middle, never the last character: base64url's final
+    // character can carry unused bits, so two different characters there can
+    // decode to identical bytes. An earlier version of this test edited the
+    // last character and passed or failed depending on what the CSPRNG
+    // happened to produce — a test that lies intermittently is worse than no
+    // test, so the mutation is verified before it is relied on.
+    const at = Math.floor(sealed.ct.length / 2);
     const flipped = {
       ...sealed,
-      ct: sealed.ct.slice(0, -1) + (sealed.ct.at(-1) === "A" ? "B" : "A"),
+      ct:
+        sealed.ct.slice(0, at) +
+        (sealed.ct[at] === "A" ? "B" : "A") +
+        sealed.ct.slice(at + 1),
     };
+    expect([...fromBase64Url(flipped.ct)]).not.toEqual([
+      ...fromBase64Url(sealed.ct),
+    ]);
+
     expect(await openWithShareKey(flipped, key)).toBeNull();
   });
 
