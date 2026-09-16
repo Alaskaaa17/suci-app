@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Amiri } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import { ServiceWorkerRegistration } from "@/components/service-worker";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -21,6 +22,17 @@ export const metadata: Metadata = {
   title: "Suci",
   description:
     "Pelacak siklus haid berbasis fiqih thaharah empat mazhab, dengan jadwal ibadah harian.",
+  applicationName: "Suci",
+  // iOS ignores the manifest for these; they are what makes an installed app
+  // open without Safari's chrome.
+  appleWebApp: {
+    capable: true,
+    title: "Suci",
+    statusBarStyle: "default",
+  },
+  formatDetection: { telephone: false },
+  // A cycle tracker has no business in search results.
+  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {
@@ -50,6 +62,7 @@ export default function RootLayout({
       </head>
       <body className={`${jakarta.variable} ${amiri.variable}`}>
         <Providers>{children}</Providers>
+        <ServiceWorkerRegistration />
       </body>
     </html>
   );

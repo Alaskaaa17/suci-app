@@ -27,14 +27,24 @@ what it models it says so and points the user to a person, rather than guessing.
 
 ```bash
 npm install
-npm run dev        # http://localhost:3000
-npm test           # engine + prayer-time unit tests
+npm run dev          # http://localhost:3000
+npm test             # engine + prayer-time unit tests (33)
 npm run typecheck
 npm run build
+
+# end-to-end, against a running production build
+npm run build && npm start &
+npm run test:e2e     # 70 checks, including offline
 ```
 
 Full-bleed on a phone; on a wide screen it renders inside the 390×844 frame from
 the design canvas.
+
+### Installing it
+
+Suci is a PWA. Open it on a phone and use "Add to Home Screen" — it then runs
+without browser chrome, in the phone frame the design assumes, and works with
+no signal at all.
 
 ## How it is put together
 
@@ -44,6 +54,9 @@ components/           the design system: primitives, icons, phone shell
 lib/fiqh/             the domain — rules, cycle engine, verdicts, prayer times
 lib/store/            encrypted local vault and the React store over it
 lib/content/          glossary, FAQ, substitute deeds
+public/sw.js          service worker — offline shell and asset caching
+tests/e2e.mjs         end-to-end checks against a production build
+scripts/make-icons.mjs  regenerates the PWA icons from the app mark
 project/              the original design handoff, unmodified
 ```
 
@@ -87,6 +100,29 @@ Suami publishes a separate, deliberately tiny record holding exactly what the
 design promises to share — the token and one bit, haid or suci. Nothing may be
 added to that shape without re-reading what the screen tells the user it shares.
 
+### Offline
+
+The app talks to no server, so offline is its normal condition rather than a
+degraded one — the only thing that ever needs fetching is the shell. The
+service worker precaches every route on install, along with the JS chunks it
+finds referenced in that HTML, so a cold start with no signal behaves like a
+warm one.
+
+It also caches the RSC payload for each route. Without that, an offline tab tap
+falls back to a full browser navigation, which remounts the app and re-prompts
+for the PIN — unusable in exactly the condition the app is built for.
+
+Two things it must never cache, both asserted in the e2e suite:
+
+- **`/s/` share pages.** A cached copy would outlive the token that authorised
+  it and could show a stale status to someone the user has already cut off.
+- **Anything carrying the vault.** User data lives only in localStorage and
+  never crosses the network, so it cannot reach the Cache API — but a future
+  sync feature could break that silently, so the test checks.
+
+Bump `CACHE_VERSION` in `public/sw.js` when changing it; old caches are dropped
+on activate.
+
 ### Prayer times
 
 Real solar calculation (`lib/fiqh/prayer-times.ts`), within a minute or two of
@@ -119,3 +155,7 @@ the city chosen in Pengaturan, not the device clock.
 - **The staged istihadhah calculator**, which the design's own footer lists as
   outstanding. Separating haid from istihadhah in a long bleed needs tamyiz,
   which the engine does not model — the app flags those cases instead.
+- **Empty states per tab and drill-in transitions**, also from that footer.
+- **Push notifications** for prayer times. Would need a service the app
+  deliberately does not have; a local scheduled notification is possible and
+  has not been built.
