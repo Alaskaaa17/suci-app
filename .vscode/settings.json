@@ -1,0 +1,11 @@
+{
+  // Tailwind v4 keeps its config in CSS, so the extension needs pointing at it.
+  "tailwindCSS.experimental.configFile": "app/globals.css",
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": { "source.fixAll.eslint": "explicit" },
+  // Use the repo's TypeScript, not VS Code's bundled one — this project is on
+  // TS 6 and the built-in version reports errors that do not exist.
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "files.exclude": { "**/.next": true, "**/node_modules": true }
+}
