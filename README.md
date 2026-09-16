@@ -28,7 +28,7 @@ what it models it says so and points the user to a person, rather than guessing.
 ```bash
 npm install
 npm run dev          # http://localhost:3000
-npm test             # engine + prayer-time unit tests (33)
+npm test             # engine, prayer times, storage, share API (79)
 npm run typecheck
 npm run build
 
@@ -48,13 +48,43 @@ the design canvas.
 Vercel works with no configuration: standard Next.js, defaults for the build
 command and output. Push the repo, import it, done.
 
-**Except Mode Suami.** It is the one feature with server state, and it needs a
-KV store attached before it works — **Storage → Create → KV**, attach to the
-project, redeploy. Without it the app falls back to an in-process map, and on
-serverless the request that writes a status and the request that reads it land
-in different instances, so a freshly created link resolves to nothing.
+**Except Mode Suami.** It is the one feature with server state, and it needs
+somewhere to keep it. Without one the app falls back to an in-process map, and
+on serverless the request that writes a status and the request that reads it
+land in different instances, so a freshly created link resolves to nothing.
 
-That failure used to be silent and it blamed the wrong person: the reader was
+Two backends are supported; `lib/server/store.ts` picks whichever the
+environment provides, and neither needs a code change.
+
+| | env vars | cost | notes |
+|---|---|---|---|
+| **Upstash Redis** (recommended) | `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`, or the `KV_REST_API_*` pair Vercel KV injects | free tier at [console.upstash.com](https://console.upstash.com); the Vercel Marketplace listing is paid | real TTLs, real atomic counters, and a token that reaches one database |
+| **Vercel Edge Config** | `EDGE_CONFIG` (injected on connect) + `VERCEL_API_TOKEN` (made by hand), plus `VERCEL_TEAM_ID` if the project is under a team | free on Hobby | see the caveats below |
+
+Edge Config is a config store being used as a database. It works, and the
+compromises are real:
+
+- **`VERCEL_API_TOKEN` is not scoped to the Edge Config.** Vercel tokens reach
+  an account or a team, so the secret guarding one bit is worth far more than
+  the bit. This is the strongest argument for Upstash, and it is a deployment
+  decision rather than a code one.
+- **No TTL.** Expiry rides inside each value and is enforced on read; expired
+  keys are swept on the next write. The promise that a stale "suci" cannot
+  linger is kept by our code, not by the platform.
+- **8 KB total on Hobby**, and writes are rate limited. Fine for a household.
+- **The request rate limiter falls back to per-instance memory**, because a
+  counter written on every read would exhaust the write budget in minutes. What
+  protects a status is the write secret, not the limiter.
+- **Reads are eventually consistent**, so a status change can take a moment to
+  reach the reader.
+
+Because of the write budget, the client only publishes when the bit actually
+changed, when the link is new, or when the record is more than half-way to
+expiry. It used to publish on every render of a new verdict — every app open,
+every edited entry — which was invisible against Redis and fatal here.
+
+With no backend at all, the app used to fail silently and blame the wrong
+person: the reader was
 told "tautan ini tidak berlaku — mungkin sudah dimatikan oleh pemiliknya" for a
 link created a minute earlier. Now the server reports `503 storage_unavailable`
 instead of `404` when it has nowhere durable to look, Mode Suami warns on the
@@ -219,11 +249,20 @@ cross the network, and Pengaturan now says so in those words.
 
 #### Provisioning
 
-Storage comes from Upstash Redis, which is what Vercel KV provisions. In the
-Vercel dashboard: **Storage → Create → KV**, attach it to the project, redeploy.
-The env vars inject themselves; nothing needs configuring in code.
+Pick a backend from the table under [Deploying](#deploying), then:
 
-Without them the app falls back to an in-process map so local development and
+**Upstash Redis.** Create a database at [console.upstash.com](https://console.upstash.com),
+copy the REST URL and REST token from its **REST API** panel, and add them in
+Vercel → Settings → Environment Variables as `UPSTASH_REDIS_REST_URL` and
+`UPSTASH_REDIS_REST_TOKEN`. Redeploy. (Provisioning through the Vercel
+Marketplace instead injects the `KV_REST_API_*` names, which are also read.)
+
+**Vercel Edge Config.** Storage → Create → Edge Config, connect it to the
+project — that injects `EDGE_CONFIG`. Writes additionally need a token from
+Vercel → Account Settings → Tokens, added as `VERCEL_API_TOKEN`, plus
+`VERCEL_TEAM_ID` if the project lives under a team. Redeploy.
+
+Either way, `GET /api/share` reports which backend is live. Without one the app falls back to an in-process map so local development and
 the test suite work with nothing provisioned. That fallback is per-instance —
 fine for `npm run dev`, and **not merely unreliable but non-functional on
 serverless**, where consecutive requests hit different instances. An earlier

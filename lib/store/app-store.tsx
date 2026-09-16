@@ -31,6 +31,7 @@ import {
   lockoutRemaining,
   NO_PIN_KEY,
   publishShare,
+  readShare,
   recordFailedUnlock,
   saveVault,
   vaultExists,
@@ -269,6 +270,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       verdict.classification === Classification.NIFAS;
     const state: "haid" | "suci" = exempt ? "haid" : "suci";
 
+    // `verdict` is rebuilt on every change to the vault, so publishing
+    // unconditionally meant a server write on every app open and every edited
+    // entry — hundreds of writes to say the same word. Harmless against Redis,
+    // and enough to exhaust an Edge Config write budget on its own.
+    //
+    // A write is warranted when the bit actually changed, when the link is new,
+    // or when the record is old enough to be worth refreshing before its
+    // seven-day expiry. The local record is the log of what was last sent.
+    if (!needsPublishing(token, state)) return;
+
     publishShare({ token, state, updatedAt: new Date().toISOString() });
     if (secret) void publishToServer({ token, secret }, state);
   }, [token, secret, verdict]);
@@ -359,6 +370,20 @@ export function useApp(): AppState {
   const ctx = useContext(Ctx);
   if (!ctx) throw new Error("useApp must be used inside <AppProvider>");
   return ctx;
+}
+
+/**
+ * Half the expiry window. Refresh well before a reader would see the link go
+ * quiet, without turning "still suci" into a write every time the app opens.
+ */
+const REFRESH_AFTER_MS = 3.5 * 24 * 60 * 60 * 1000;
+
+function needsPublishing(token: string, state: "haid" | "suci"): boolean {
+  const last = readShare();
+  if (!last || last.token !== token) return true; // new or rotated link
+  if (last.state !== state) return true; // the bit actually changed
+  const age = Date.now() - new Date(last.updatedAt).getTime();
+  return !(age >= 0 && age < REFRESH_AFTER_MS);
 }
 
 /**

@@ -30,7 +30,7 @@ export function generateShareSecret(): string {
  * the link still will not work — which is exactly the failure that used to be
  * reported to the reader as if the owner had revoked it.
  */
-export type ShareStorage = "redis" | "memory" | "unknown";
+export type ShareStorage = "redis" | "edge-config" | "memory" | "unknown";
 
 export interface PublishResult {
   ok: boolean;
