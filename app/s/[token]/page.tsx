@@ -12,6 +12,24 @@ import {
   type SharePageResult,
 } from "@/lib/store/share-client";
 
+const EXPLANATIONS: Record<
+  "gone" | "unavailable" | "offline",
+  { title: string; body: string }
+> = {
+  gone: {
+    title: "Tautan ini tidak berlaku",
+    body: "Sudah diganti atau dimatikan oleh pemiliknya. Mintalah tautan yang baru.",
+  },
+  unavailable: {
+    title: "Belum bisa menampilkan status",
+    body: "Layanannya sedang belum siap menyimpan status, jadi tautan ini belum bisa dibaca. Tautannya sendiri tidak salah dan tidak dimatikan — coba lagi nanti.",
+  },
+  offline: {
+    title: "Belum bisa memuat",
+    body: "Sambungan internet sedang tidak bisa dipakai. Coba lagi sebentar lagi.",
+  },
+};
+
 /**
  * Screen 22 — the page a husband opens.
  *
@@ -56,20 +74,31 @@ export default function SharedStatusPage() {
   }
 
   if (result.status !== "ok") {
+    // Three different things went wrong, and they are not each other's fault.
+    // Only one of them is the owner's doing, so only one of them says so.
+    const message = EXPLANATIONS[result.status];
     return (
       <Screen tabBar={false} className="items-center justify-center gap-5 px-7">
         <Brand />
         <div className="animate-rise w-full rounded-3xl border border-hair bg-bg px-6 py-8 text-center shadow-card">
           <h1 className="m-0 text-lg/[1.3] font-semibold text-tx">
-            {result.status === "gone"
-              ? "Tautan ini tidak berlaku"
-              : "Belum bisa memuat"}
+            {message.title}
           </h1>
-          <p className="mt-2.5 mb-0 text-[13px]/[1.6] text-tx2">
-            {result.status === "gone"
-              ? "Mungkin sudah diganti atau dimatikan oleh pemiliknya. Mintalah tautan yang baru."
-              : "Sambungan internet sedang tidak bisa dipakai. Coba lagi sebentar lagi."}
+          <p className="mt-2.5 mb-0 text-[13px]/[1.6] text-balance text-tx2">
+            {message.body}
           </p>
+          {result.status !== "gone" && (
+            <button
+              type="button"
+              onClick={() => {
+                setResult(null);
+                void fetchSharedStatus(params.token).then(setResult);
+              }}
+              className="mt-5 min-h-[44px] rounded-full border border-rose-b bg-rose px-6 text-[13px]/[1] font-semibold text-tx transition active:scale-[.97] hover:brightness-95"
+            >
+              Coba lagi
+            </button>
+          )}
         </div>
       </Screen>
     );

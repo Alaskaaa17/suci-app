@@ -37,7 +37,7 @@ npm run test:all        # typecheck + lint + unit + contrast
 
 # end-to-end, against a running production build
 npm run build && npm start &
-npm run test:e2e        # 81 checks: flows, offline, security, a11y
+npm run test:e2e        # 90 checks: flows, offline, security, a11y
 ```
 
 Full-bleed on a phone; on a wide screen it renders inside the 390×844 frame from
@@ -45,9 +45,22 @@ the design canvas.
 
 ### Deploying
 
-Vercel works with no configuration: standard Next.js, no backend, no
-environment variables, nothing to provision. Push the repo, import it, done.
-The build command and output are the defaults.
+Vercel works with no configuration: standard Next.js, defaults for the build
+command and output. Push the repo, import it, done.
+
+**Except Mode Suami.** It is the one feature with server state, and it needs a
+KV store attached before it works — **Storage → Create → KV**, attach to the
+project, redeploy. Without it the app falls back to an in-process map, and on
+serverless the request that writes a status and the request that reads it land
+in different instances, so a freshly created link resolves to nothing.
+
+That failure used to be silent and it blamed the wrong person: the reader was
+told "tautan ini tidak berlaku — mungkin sudah dimatikan oleh pemiliknya" for a
+link created a minute earlier. Now the server reports `503 storage_unavailable`
+instead of `404` when it has nowhere durable to look, Mode Suami warns on the
+screen where the link is handed over, and the reader page says the service is
+not ready rather than accusing the owner. `GET /api/share` reports which store
+is live.
 
 Two things are handled in `next.config.ts` rather than left to the platform:
 
@@ -211,9 +224,19 @@ Vercel dashboard: **Storage → Create → KV**, attach it to the project, redep
 The env vars inject themselves; nothing needs configuring in code.
 
 Without them the app falls back to an in-process map so local development and
-the test suite work with nothing provisioned. That fallback is per-instance and
-disappears on restart — fine for `npm run dev`, useless in production, and
-`storageKind()` reports which is live.
+the test suite work with nothing provisioned. That fallback is per-instance —
+fine for `npm run dev`, and **not merely unreliable but non-functional on
+serverless**, where consecutive requests hit different instances. An earlier
+version of this note said it "disappears on restart", which undersold it badly
+enough to be wrong in practice.
+
+So `storageKind()` is not just introspection, it changes what the API says. A
+missing record means "revoked or expired" only when there was a durable place to
+look; under the fallback it means nothing at all, and the endpoint answers `503
+storage_unavailable` rather than `404`. Every screen that could otherwise
+present a deployment problem as a user's decision reads that signal: Mode Suami
+warns before the link is shared, and the reader page separates "not ready" from
+"taken down".
 
 ### Offline
 

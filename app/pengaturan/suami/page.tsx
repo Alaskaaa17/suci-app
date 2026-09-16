@@ -1,8 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Screen } from "@/components/shell";
-import { CheckIcon, CloseIcon, InfoDotIcon } from "@/components/icons";
+import {
+  CheckIcon,
+  CloseIcon,
+  InfoDotIcon,
+  WarningIcon,
+} from "@/components/icons";
 import {
   Advisory,
   BackLink,
@@ -13,9 +18,11 @@ import {
 } from "@/components/ui";
 import { generateShareToken } from "@/lib/store/crypto";
 import {
+  fetchShareStorage,
   generateShareSecret,
   publishShare,
   revokeShare,
+  type ShareStorage,
 } from "@/lib/store/share-client";
 import { Classification } from "@/lib/fiqh/types";
 import { useApp } from "@/lib/store/app-store";
@@ -30,6 +37,19 @@ export default function ModeSuamiPage() {
   const { data, update, verdict } = useApp();
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState<null | "on" | "off" | "rotate">(null);
+  const [storage, setStorage] = useState<ShareStorage | null>(null);
+
+  // Ask before promising. A link this deployment cannot keep is worse than no
+  // link: she hands it over, he opens it, and it tells him it is not valid.
+  useEffect(() => {
+    let cancelled = false;
+    void fetchShareStorage().then((s) => {
+      if (!cancelled) setStorage(s);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (!data) return null;
   const token = data.profile.shareToken;
@@ -54,7 +74,8 @@ export default function ModeSuamiPage() {
       draft.profile.shareToken = next.token;
       draft.profile.shareSecret = next.secret;
     });
-    await publishShare(next, currentState);
+    const published = await publishShare(next, currentState);
+    if (published.storage !== "unknown") setStorage(published.storage);
     setBusy(null);
   };
 
@@ -69,7 +90,8 @@ export default function ModeSuamiPage() {
       draft.profile.shareToken = next.token;
       draft.profile.shareSecret = next.secret;
     });
-    await publishShare(next, currentState);
+    const published = await publishShare(next, currentState);
+    if (published.storage !== "unknown") setStorage(published.storage);
     setBusy(null);
   };
 
@@ -119,6 +141,25 @@ export default function ModeSuamiPage() {
         </p>
       </div>
 
+      {storage === "memory" && (
+        <section className="animate-rise flex items-start gap-[11px] rounded-[20px] border border-peach-b bg-peach px-[15px] py-[13px]">
+          <IconBubble tone="peach" size={30} className="bg-bg">
+            <WarningIcon size={15} />
+          </IconBubble>
+          <span className="flex-1">
+            <span className="block text-[13.5px]/[1.3] font-semibold text-tx">
+              Tautan belum bisa diandalkan
+            </span>
+            <span className="mt-1 block text-[12px]/[1.5] text-tx2">
+              Server tempat Suci dipasang belum punya penyimpanan status yang
+              tetap, jadi tautan yang kamu bagikan bisa terbuka kosong di
+              ponselnya. Catatanmu sendiri tetap aman di ponsel ini. Penyimpanan
+              itu perlu disambungkan dulu, lalu aplikasinya dipasang ulang.
+            </span>
+          </span>
+        </section>
+      )}
+
       <section className="flex flex-col gap-[11px] rounded-[20px] border border-hair p-[17px] shadow-card">
         <h2 className="m-0 text-[15.5px]/[1.3] font-semibold text-tx">
           Yang dia lihat
@@ -147,12 +188,24 @@ export default function ModeSuamiPage() {
             <h2 className="m-0 text-[15px]/[1.3] font-semibold text-tx">
               Tautan aktif
             </h2>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-b bg-bg px-[11px] py-[5px] text-[11px]/[1] font-semibold tracking-[.06em] text-tx uppercase">
+            <span
+              className={cx(
+                "inline-flex items-center gap-1.5 rounded-full border bg-bg px-[11px] py-[5px] text-[11px]/[1] font-semibold tracking-[.06em] uppercase",
+                storage === "memory"
+                  ? "border-peach-b text-peach-tx"
+                  : "border-rose-b text-tx",
+              )}
+            >
               <span
                 aria-hidden="true"
-                className="block h-[7px] w-[7px] animate-pulse rounded-full bg-icon"
+                className={cx(
+                  "block h-[7px] w-[7px] rounded-full",
+                  storage === "memory"
+                    ? "bg-peach-tx"
+                    : "animate-pulse bg-icon",
+                )}
               />
-              Nyala
+              {storage === "memory" ? "Belum aktif" : "Nyala"}
             </span>
           </div>
 

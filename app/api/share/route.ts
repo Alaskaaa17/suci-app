@@ -5,6 +5,7 @@ import {
   underWriteLimit,
   writeShareRecord,
 } from "@/lib/server/share";
+import { storageKind } from "@/lib/server/store";
 
 /**
  * Publishing and revoking a share status.
@@ -16,6 +17,20 @@ import {
 export const dynamic = "force-dynamic";
 
 const NO_STORE = { "Cache-Control": "no-store" };
+
+/**
+ * Health. Says whether this deployment has somewhere durable to keep a share
+ * status, so Mode Suami can warn before handing out a link that will not work
+ * on anyone else's phone. It exposes one word about the deployment and nothing
+ * about any user — no token, no state, no count.
+ */
+export async function GET() {
+  const storage = storageKind();
+  return NextResponse.json(
+    { storage, durable: storage !== "memory" },
+    { headers: NO_STORE },
+  );
+}
 
 export async function POST(request: Request) {
   if (!(await underWriteLimit(await clientKey(request)))) {
@@ -55,7 +70,13 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json({ ok: true }, { headers: NO_STORE });
+  // `storage` rides along so the owner's screen learns the truth from the very
+  // write that was supposed to make the link work, rather than only when a
+  // reader reports it broken.
+  return NextResponse.json(
+    { ok: true, storage: storageKind() },
+    { headers: NO_STORE },
+  );
 }
 
 export async function DELETE(request: Request) {

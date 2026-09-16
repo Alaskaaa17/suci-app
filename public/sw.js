@@ -190,6 +190,10 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (isShareRoute(url)) return; // straight to the network, never stored
+  // The share API answers with somebody's current status and with whether this
+  // deployment can store one. A stale copy of either would be a lie told
+  // confidently, so it never enters a cache.
+  if (url.pathname.startsWith("/api/")) return;
 
   if (isImmutableAsset(url)) {
     event.respondWith(cacheFirst(request, ASSET_CACHE));

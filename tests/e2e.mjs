@@ -282,6 +282,13 @@ check("share link generated", /\/s\/[a-z0-9-]+/.test(link));
 
 const token = link.split("/s/")[1];
 
+// Without KV provisioned the app must warn here, on the screen where the link
+// is handed over, rather than letting the reader discover it.
+check(
+  "Mode Suami warns when the deployment has no durable store",
+  /Tautan belum bisa diandalkan/.test(await page.textContent("body")),
+);
+
 // The point of the share server: a completely separate browser, with no
 // vault, no localStorage and no service worker, must see the status.
 const reader = await browser.newContext({ viewport: { width: 390, height: 844 } });
@@ -313,20 +320,40 @@ check("a reader cannot forge the status", forged === 403, `HTTP ${forged}`);
 await readerPage.goto(`${BASE}/s/tidak-valid-xxxx`, {
   waitUntil: "domcontentloaded",
 });
-await readerPage.waitForSelector("text=tidak berlaku", { timeout: 15000 });
-check("bad token rejected", true);
+await readerPage.waitForSelector("text=Suci", { timeout: 15000 });
+await readerPage.waitForTimeout(600);
+check(
+  "bad token shows no status",
+  !/Hari ini dia/.test(await readerPage.textContent("body")),
+);
 
-// Turning Mode Suami off must kill the link for everyone, immediately.
+// A link that cannot be resolved must never be reported as one the owner took
+// down. This suite runs without KV, so the server has no durable store and
+// says so — the one message it must not show is the accusation.
+const unknownCopy = await readerPage.textContent("body");
+check(
+  "an unresolvable link does not blame the owner",
+  !/tidak berlaku/.test(unknownCopy),
+  unknownCopy.slice(0, 80),
+);
+check(
+  "an unresolvable link says why",
+  /Belum bisa menampilkan status/.test(unknownCopy),
+);
+
+// Turning Mode Suami off must kill the link for everyone, immediately. What
+// matters is that the status stops being shown, whatever the server can work
+// out about the reason.
 await go("/pengaturan/suami");
 await page.getByRole("button", { name: /Matikan Mode Suami/ }).click();
 await page.waitForTimeout(900);
 await readerPage.goto(`${BASE}/s/${token}`, { waitUntil: "domcontentloaded" });
-await readerPage
-  .waitForSelector("text=tidak berlaku", { timeout: 15000 })
-  .then(() => check("revoking kills the link on the other device", true))
-  .catch(() =>
-    check("revoking kills the link on the other device", false, "still live"),
-  );
+await readerPage.waitForTimeout(900);
+check(
+  "revoking kills the link on the other device",
+  !/Hari ini dia/.test(await readerPage.textContent("body")),
+  "still live",
+);
 await reader.close();
 
 // Back on for the remaining checks.

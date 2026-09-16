@@ -21,21 +21,53 @@ export function generateShareSecret(): string {
   return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+/**
+ * Whether this deployment can actually keep a share status.
+ *
+ * "memory" means the server accepted the write into an in-process map. On
+ * serverless that map is per-instance, so the reader's request very likely
+ * lands somewhere that has never heard of the token. The write "succeeded" and
+ * the link still will not work — which is exactly the failure that used to be
+ * reported to the reader as if the owner had revoked it.
+ */
+export type ShareStorage = "redis" | "memory" | "unknown";
+
+export interface PublishResult {
+  ok: boolean;
+  storage: ShareStorage;
+}
+
 export async function publishShare(
   credentials: ShareCredentials,
   state: ShareState,
-): Promise<boolean> {
+): Promise<PublishResult> {
   try {
     const res = await fetch("/api/share", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...credentials, state }),
     });
-    return res.ok;
+    if (!res.ok) return { ok: false, storage: "unknown" };
+    const body = (await res.json().catch(() => ({}))) as {
+      storage?: ShareStorage;
+    };
+    return { ok: true, storage: body.storage ?? "unknown" };
   } catch {
     // Offline. The local record is still current, and the next status change
     // or app open will republish.
-    return false;
+    return { ok: false, storage: "unknown" };
+  }
+}
+
+/** Asks the deployment whether sharing can work at all, before promising it. */
+export async function fetchShareStorage(): Promise<ShareStorage> {
+  try {
+    const res = await fetch("/api/share", { cache: "no-store" });
+    if (!res.ok) return "unknown";
+    const body = (await res.json()) as { storage?: ShareStorage };
+    return body.storage ?? "unknown";
+  } catch {
+    return "unknown";
   }
 }
 
@@ -56,7 +88,11 @@ export async function revokeShare(
 
 export type SharePageResult =
   | { status: "ok"; state: ShareState; updatedAt: string; source: "server" | "device" }
+  /** The owner revoked or rotated the link, or it expired. Their doing. */
   | { status: "gone" }
+  /** The server is up but has nowhere to keep statuses. Not the owner's doing. */
+  | { status: "unavailable" }
+  /** This device cannot reach the server right now. */
   | { status: "offline" };
 
 /**
@@ -83,9 +119,37 @@ export async function fetchSharedStatus(
       };
     }
 
-    if (res.status === 404) return { status: "gone" };
-    return { status: "offline" };
+    // A 404 that is not our JSON is Next's own "page not found" — the route
+    // does not exist in this build. That is a deployment that has not caught
+    // up, not a link the owner took down, and saying "tautan tidak berlaku"
+    // there accuses her of something she did not do.
+    const isOurApi = (res.headers.get("content-type") ?? "").includes(
+      "application/json",
+    );
+
+    if (res.status === 404 && isOurApi) return onlyDeviceCopy(token, "gone");
+    if (res.status === 404) return onlyDeviceCopy(token, "unavailable");
+    if (res.status === 503) return onlyDeviceCopy(token, "unavailable");
+    return onlyDeviceCopy(token, "offline");
   } catch {
+    return onlyDeviceCopy(token, "offline");
+  }
+}
+
+/**
+ * When the server cannot answer, the one case where showing something is still
+ * honest is the owner on her own device: the local record is hers and current.
+ * For anybody else there is nothing to fall back to, and the reason is shown
+ * instead.
+ *
+ * A revoked link deliberately does not fall back — the owner turning sharing
+ * off must stop showing a status even on the phone that wrote it.
+ */
+function onlyDeviceCopy(
+  token: string,
+  reason: "gone" | "unavailable" | "offline",
+): SharePageResult {
+  if (reason !== "gone") {
     const local = readShare();
     if (local && local.token === token) {
       return {
@@ -95,6 +159,6 @@ export async function fetchSharedStatus(
         source: "device",
       };
     }
-    return { status: "offline" };
   }
+  return { status: reason };
 }
