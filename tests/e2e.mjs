@@ -76,6 +76,21 @@ const shift = (day, n) => {
   return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}`;
 };
 
+/* ---- the privacy policy renders with no vault at all ----------------------- */
+// Has to work for someone who never opens the app — a store reviewer, or
+// anyone who followed the link from the listing — so this runs before any
+// vault exists, on the same "fresh install" state as the redirect check below.
+
+await page.goto(BASE + "/kebijakan-privasi", { waitUntil: "networkidle" });
+check(
+  "privacy policy renders without redirecting to onboarding",
+  page.url().endsWith("/kebijakan-privasi"),
+);
+check(
+  "privacy policy has a heading",
+  /Kebijakan Privasi/.test(await page.textContent("body")),
+);
+
 /* ---- onboarding ----------------------------------------------------------- */
 
 await page.goto(BASE, { waitUntil: "networkidle" });
@@ -236,6 +251,7 @@ const ROUTES = [
   "/pengaturan/kehamilan",
   "/pengaturan/data-saya",
   "/pengaturan/suami",
+  "/kebijakan-privasi",
 ];
 
 for (const route of ROUTES) {

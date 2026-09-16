@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Screen } from "@/components/shell";
 import {
@@ -287,6 +288,15 @@ export default function PengaturanPage() {
           </span>
         </span>
       </div>
+
+      <Link
+        href="/kebijakan-privasi"
+        // py-1.5 lifts the tap target to the 24px WCAG 2.2 minimum without
+        // the footer text itself growing — same trick as BackLink.
+        className="-my-1.5 mb-3.5 py-1.5 text-center text-[12px]/[1.5] text-tx2 underline underline-offset-2 transition hover:text-tx"
+      >
+        Kebijakan Privasi
+      </Link>
     </Screen>
   );
 }

@@ -17,7 +17,7 @@
  * Bump CACHE_VERSION on any change here; the old cache is dropped on activate.
  */
 
-const CACHE_VERSION = "suci-v2";
+const CACHE_VERSION = "suci-v3";
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const ASSET_CACHE = `${CACHE_VERSION}-assets`;
 const RSC_CACHE = `${CACHE_VERSION}-rsc`;
@@ -48,6 +48,7 @@ const ROUTES = [
   "/pengaturan/kehamilan",
   "/pengaturan/data-saya",
   "/pengaturan/suami",
+  "/kebijakan-privasi",
 ];
 
 const STATIC = ["/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
