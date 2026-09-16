@@ -656,7 +656,9 @@ export function BackLink({
     <Link
       href={href}
       className={cx(
-        "inline-flex items-center gap-1.5 text-sm font-semibold transition",
+        // -my-1 keeps the visual position while the padding lifts the hit
+        // area to the 24px minimum.
+        "-my-1 inline-flex items-center gap-1.5 py-1 text-sm font-semibold transition",
         tone === "stone"
           ? "text-stone-tx2 hover:text-stone-tx"
           : "text-tx2 hover:text-tx",

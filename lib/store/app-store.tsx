@@ -21,13 +21,16 @@ import {
 } from "@/lib/fiqh/types";
 import {
   blankEntry,
+  clearFailedUnlocks,
   clearShare,
   destroyVault,
   emptyVault,
   entryList,
   loadVault,
+  lockoutRemaining,
   NO_PIN_KEY,
   publishShare,
+  recordFailedUnlock,
   saveVault,
   vaultExists,
   vaultIsEncrypted,
@@ -44,7 +47,8 @@ interface AppState {
   analysis: CycleAnalysis | null;
   verdict: Verdict | null;
 
-  unlock: (pin: string) => Promise<boolean>;
+  /** Resolves ok, or with how long the throttle says to wait. */
+  unlock: (pin: string) => Promise<{ ok: boolean; waitMs?: number }>;
   completeOnboarding: (args: {
     name: string;
     madhhab: Profile["madhhab"];
@@ -142,20 +146,61 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return writeChain.current;
   }, []);
 
-  const unlock = useCallback(async (pin: string) => {
+  const unlock = useCallback<AppState["unlock"]>(async (pin) => {
+    const waitMs = lockoutRemaining();
+    if (waitMs > 0) return { ok: false, waitMs };
+
     const result = await loadVault(pin);
-    if (!result.ok) return false;
+    if (!result.ok) {
+      return { ok: false, waitMs: recordFailedUnlock() };
+    }
+
+    clearFailedUnlocks();
     pinRef.current = pin;
+    dataRef.current = result.data;
     setData(result.data);
     setStatus("ready");
-    return true;
+    return { ok: true };
   }, []);
 
   const lock = useCallback(() => {
+    // With no PIN there is nothing to lock to, and clearing `data` would leave
+    // a "ready" app with no vault — a blank screen with no way back.
+    if (!vaultIsEncrypted()) return;
     pinRef.current = null;
+    dataRef.current = null;
     setData(null);
-    setStatus(vaultIsEncrypted() ? "locked" : "ready");
+    setStatus("locked");
   }, []);
+
+  /**
+   * Auto-lock. Onboarding's promise is about a shared or borrowed phone, and
+   * an app that unlocks once and stays open until a reload does not keep it.
+   *
+   * Locking only after the app has been out of sight for a while, rather than
+   * the moment it is hidden, means glancing at a message does not cost a PIN —
+   * and nothing is locked mid-entry, so no draft is ever lost.
+   */
+  useEffect(() => {
+    if (status !== "ready") return;
+
+    const GRACE_MS = 2 * 60 * 1000;
+    let hiddenAt: number | null = null;
+
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        hiddenAt = Date.now();
+        return;
+      }
+      if (hiddenAt !== null && Date.now() - hiddenAt >= GRACE_MS) {
+        lock();
+      }
+      hiddenAt = null;
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [status, lock]);
 
   const completeOnboarding = useCallback(
     async ({

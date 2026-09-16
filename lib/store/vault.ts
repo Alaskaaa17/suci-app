@@ -162,6 +162,84 @@ export function destroyVault(): void {
   localStorage.removeItem(VAULT_KEY);
   localStorage.removeItem(NO_PIN_KEY);
   localStorage.removeItem(SHARE_KEY);
+  localStorage.removeItem(ATTEMPTS_KEY);
+}
+
+/* ---------------------------- PIN throttling ------------------------------ */
+
+/**
+ * Failed-unlock throttling.
+ *
+ * PBKDF2 at 310k iterations costs roughly a quarter second per guess, which
+ * alone leaves a six-digit PIN reachable in a few days by someone holding the
+ * phone. Escalating lockouts push that out of reach for the threat this is
+ * actually for — a borrowed or shared device, not a forensics lab.
+ *
+ * Stored in the clear on purpose: it holds no secret, and it has to survive a
+ * reload, which is exactly what an attacker would otherwise use to reset it.
+ */
+const ATTEMPTS_KEY = "suci.attempts";
+
+/** Failures before the first lockout, then the delay for each step after. */
+const FREE_ATTEMPTS = 5;
+const LOCKOUT_STEPS_MS = [30_000, 60_000, 300_000, 900_000];
+
+interface AttemptState {
+  failures: number;
+  lockedUntil: number;
+}
+
+function readAttempts(): AttemptState {
+  try {
+    const raw = localStorage.getItem(ATTEMPTS_KEY);
+    if (!raw) return { failures: 0, lockedUntil: 0 };
+    const parsed = JSON.parse(raw) as AttemptState;
+    return {
+      failures: Number(parsed.failures) || 0,
+      lockedUntil: Number(parsed.lockedUntil) || 0,
+    };
+  } catch {
+    return { failures: 0, lockedUntil: 0 };
+  }
+}
+
+/** Milliseconds still to wait, or 0 when an attempt is allowed now. */
+export function lockoutRemaining(now = Date.now()): number {
+  const { lockedUntil } = readAttempts();
+  return Math.max(0, lockedUntil - now);
+}
+
+export function recordFailedUnlock(now = Date.now()): number {
+  const state = readAttempts();
+  const failures = state.failures + 1;
+  let lockedUntil = 0;
+
+  if (failures > FREE_ATTEMPTS) {
+    const step = Math.min(
+      failures - FREE_ATTEMPTS - 1,
+      LOCKOUT_STEPS_MS.length - 1,
+    );
+    lockedUntil = now + LOCKOUT_STEPS_MS[step];
+  }
+
+  try {
+    localStorage.setItem(
+      ATTEMPTS_KEY,
+      JSON.stringify({ failures, lockedUntil }),
+    );
+  } catch {
+    // Without storage the throttle cannot persist; the delay still applies
+    // for this session via the returned value.
+  }
+  return Math.max(0, lockedUntil - now);
+}
+
+export function clearFailedUnlocks(): void {
+  try {
+    localStorage.removeItem(ATTEMPTS_KEY);
+  } catch {
+    // Nothing to clear.
+  }
 }
 
 /* ---------------------------- husband mode ------------------------------- */

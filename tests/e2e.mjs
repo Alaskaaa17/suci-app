@@ -475,6 +475,98 @@ if (swReady) {
   results.push("SKIP  offline checks (no service worker — dev build?)");
 }
 
+/* ---- accessibility ------------------------------------------------------------
+   The design's own rule is that status is never carried by colour alone, and a
+   PIN pad that only responds to taps is unusable with a keyboard or a switch.
+   ------------------------------------------------------------------------------ */
+
+for (const route of ["/", "/kalender", "/edukasi/ikhtilaf", "/pengaturan"]) {
+  await go(route);
+  const a11y = await page.evaluate(() => {
+    const problems = [];
+    if (document.querySelectorAll("h1").length !== 1) {
+      problems.push(`h1 count ${document.querySelectorAll("h1").length}`);
+    }
+    const levels = [...document.querySelectorAll("h1,h2,h3,h4")].map((h) =>
+      Number(h.tagName[1]),
+    );
+    for (let i = 1; i < levels.length; i++) {
+      if (levels[i] - levels[i - 1] > 1) problems.push("heading level skipped");
+    }
+    for (const el of document.querySelectorAll(
+      "button,a,input,select,textarea,[role=switch],[role=radio],[role=tab]",
+    )) {
+      const name = (
+        el.getAttribute("aria-label") ||
+        el.textContent ||
+        ""
+      ).trim();
+      const labelled =
+        el.closest("label") ||
+        (el.id && document.querySelector(`label[for="${el.id}"]`));
+      if (!name && !labelled) problems.push(`unnamed ${el.tagName.toLowerCase()}`);
+    }
+    // WCAG 2.2 AA 2.5.8 — 24x24 minimum target size.
+    for (const el of document.querySelectorAll("button,a,[role=switch],[role=tab]")) {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && (r.width < 24 || r.height < 24)) {
+        problems.push(`target ${Math.round(r.width)}x${Math.round(r.height)}`);
+      }
+    }
+    return [...new Set(problems)];
+  });
+  check(`a11y structure ${route}`, a11y.length === 0, a11y.join(", "));
+}
+
+/* ---- security headers ------------------------------------------------------- */
+
+const headers = await page.evaluate(async () => {
+  const res = await fetch("/", { method: "HEAD" });
+  const out = {};
+  res.headers.forEach((v, k) => (out[k.toLowerCase()] = v));
+  return out;
+});
+const csp = headers["content-security-policy"] ?? "";
+check("CSP is set", csp.length > 0);
+// The header that actually matters here: with no backend, any outbound request
+// is an exfiltration attempt.
+check("connect-src is locked to self", csp.includes("connect-src 'self'"));
+check("the app cannot be framed", csp.includes("frame-ancestors 'none'"));
+check("referrer is not leaked", headers["referrer-policy"] === "no-referrer");
+
+/* ---- PIN throttling ----------------------------------------------------------
+   Last, because it deliberately locks the vault for 30 seconds.
+   ------------------------------------------------------------------------------ */
+
+await page.evaluate(() => localStorage.removeItem("suci.attempts"));
+await page.goto(BASE, { waitUntil: "networkidle" });
+await page.reload({ waitUntil: "networkidle" });
+await page.waitForSelector("text=Masukkan PIN", { timeout: 5000 });
+
+for (let attempt = 0; attempt < 6; attempt++) {
+  for (const d of "000000") {
+    await page.getByRole("button", { name: d, exact: true }).click();
+  }
+  await page.waitForTimeout(700);
+}
+
+const throttled = await page.textContent("body");
+check(
+  "repeated wrong PINs trigger a lockout",
+  /Terlalu banyak percobaan/.test(throttled),
+);
+check(
+  "the keypad is disabled while locked out",
+  await page.getByRole("button", { name: "1", exact: true }).isDisabled(),
+);
+const stored = await page.evaluate(() =>
+  JSON.parse(localStorage.getItem("suci.attempts") ?? "null"),
+);
+check(
+  "the lockout survives a reload",
+  stored?.lockedUntil > Date.now(),
+);
+
 await browser.close();
 
 console.log(results.join("\n"));

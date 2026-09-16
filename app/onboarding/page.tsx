@@ -150,7 +150,7 @@ export default function OnboardingPage() {
             onChange={(e) => setName(e.target.value)}
             placeholder="Dipakai untuk menyapamu di Beranda"
             autoComplete="given-name"
-            className="rounded-2xl border border-hair bg-bg px-[15px] py-3 text-[14px] text-tx placeholder:text-tx2/70"
+            className="rounded-2xl border border-field-b bg-bg px-[15px] py-3 text-[14px] text-tx placeholder:text-tx2/70"
           />
         </label>
 

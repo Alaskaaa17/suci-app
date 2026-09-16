@@ -238,7 +238,7 @@ function CatatScreen() {
           rows={3}
           placeholder="Tulis apa saja yang ingin kamu ingat hari ini…"
           aria-label="Catatan bebas"
-          className="mt-2.5 min-h-[74px] w-full resize-none rounded-2xl border border-hair bg-transparent px-[15px] py-[13px] text-[13.5px]/[1.6] text-tx placeholder:text-tx2/75"
+          className="mt-2.5 min-h-[74px] w-full resize-none rounded-2xl border border-field-b bg-transparent px-[15px] py-[13px] text-[13.5px]/[1.6] text-tx placeholder:text-tx2/75"
         />
       </div>
 

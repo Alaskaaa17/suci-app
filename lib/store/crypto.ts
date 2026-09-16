@@ -116,11 +116,32 @@ function fromBase64(b64: string): Uint8Array {
   return out;
 }
 
-/** A share token for husband mode: short, readable, unguessable. */
+/**
+ * A share token for husband mode: short, readable, unguessable.
+ *
+ * Drawn by rejection sampling rather than `byte % alphabet.length`. With a
+ * 31-character alphabet, 256 is not a multiple of 31, so the modulo shortcut
+ * makes the first eight letters about 3% more likely than the rest. The bias
+ * is small, but this is the only thing standing between a guessed URL and
+ * someone's cycle status, so it is drawn uniformly.
+ */
 export function generateShareToken(): string {
   const alphabet = "abcdefghjkmnpqrstuvwxyz23456789"; // no look-alikes
-  const bytes = crypto.getRandomValues(new Uint8Array(12));
-  const chars = Array.from(bytes, (b) => alphabet[b % alphabet.length]);
+  const LENGTH = 12;
+  // Largest multiple of the alphabet that fits in a byte; anything at or above
+  // it is discarded and redrawn.
+  const limit = Math.floor(256 / alphabet.length) * alphabet.length;
+
+  const chars: string[] = [];
+  while (chars.length < LENGTH) {
+    const batch = crypto.getRandomValues(new Uint8Array(LENGTH));
+    for (const b of batch) {
+      if (b >= limit) continue;
+      chars.push(alphabet[b % alphabet.length]);
+      if (chars.length === LENGTH) break;
+    }
+  }
+
   return `${chars.slice(0, 4).join("")}-${chars.slice(4, 8).join("")}-${chars
     .slice(8, 12)
     .join("")}`;

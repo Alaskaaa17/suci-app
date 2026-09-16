@@ -31,6 +31,11 @@
   --stone-tx2: #5f5e5a;
   --stone-b: rgba(44, 44, 42, 0.12);
   --hair: rgba(153, 53, 86, 0.14);
+  /* Form-control borders only. `--hair` sits at 1.25:1 against the page, which
+     is fine for a decorative divider but leaves a text field with no visible
+     box — and there the border is the whole affordance, so WCAG 1.4.11 asks
+     for 3:1. Kept in the same rose family so the design still reads as itself. */
+  --field-b: #a9838f;
   --sh: 0 4px 16px -4px rgba(138, 65, 91, 0.1);
   --onsolid: #ffffff;
   --cap: #6e675f;
@@ -61,6 +66,7 @@
   --stone-tx2: #b5b1a8;
   --stone-b: rgba(237, 234, 227, 0.12);
   --hair: rgba(246, 232, 236, 0.12);
+  --field-b: #8a5a6c;
   --sh: 0 4px 16px -4px rgba(0, 0, 0, 0.45);
   --onsolid: #ffffff;
   --cap: #9c948b;
@@ -91,6 +97,7 @@
   --color-stone-tx2: var(--stone-tx2);
   --color-stone-b: var(--stone-b);
   --color-hair: var(--hair);
+  --color-field-b: var(--field-b);
   --color-onsolid: var(--onsolid);
   --color-cap: var(--cap);
 

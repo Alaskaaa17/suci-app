@@ -30,12 +30,16 @@ export default function BerandaPage() {
   return (
     <Screen className="pt-3">
       <header className="flex items-center justify-between">
-        <div>
-          <div className="text-[13px]/[1.3] text-tx2">Assalamualaikum,</div>
-          <div className="text-[22px]/[1.25] font-bold tracking-[-.015em] text-tx">
+        {/* The greeting is this screen's heading — without it, Beranda had no
+            h1 at all and a screen reader had nothing to announce. */}
+        <h1 className="m-0 font-normal">
+          <span className="block text-[13px]/[1.3] text-tx2">
+            Assalamualaikum,
+          </span>
+          <span className="block text-[22px]/[1.25] font-bold tracking-[-.015em] text-tx">
             {profile.name || "Selamat datang"}
-          </div>
-        </div>
+          </span>
+        </h1>
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <Link

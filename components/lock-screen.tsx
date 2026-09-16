@@ -6,6 +6,7 @@ import { PinDots, PinPad, PIN_LENGTH } from "./pin-pad";
 import { Screen } from "./shell";
 import { PrimaryButton } from "./ui";
 import { useApp } from "@/lib/store/app-store";
+import { lockoutRemaining } from "@/lib/store/vault";
 
 /**
  * Screen 04. Deliberately has no "forgot PIN" recovery: the key is derived
@@ -18,20 +19,31 @@ export function LockScreen() {
   const [error, setError] = useState(false);
   const [busy, setBusy] = useState(false);
   const [attempts, setAttempts] = useState(0);
+  const [waitMs, setWaitMs] = useState(() => lockoutRemaining());
+
+  // Count the lockout down rather than leaving a dead keypad with no reason.
+  useEffect(() => {
+    if (waitMs <= 0) return;
+    const id = window.setInterval(() => {
+      setWaitMs(lockoutRemaining());
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [waitMs]);
 
   const submit = useCallback(
     async (candidate: string) => {
-      if (candidate.length !== PIN_LENGTH || busy) return;
+      if (candidate.length !== PIN_LENGTH || busy || waitMs > 0) return;
       setBusy(true);
-      const ok = await unlock(candidate);
-      if (!ok) {
+      const result = await unlock(candidate);
+      if (!result.ok) {
         setError(true);
         setAttempts((a) => a + 1);
+        setWaitMs(result.waitMs ?? 0);
         setPin("");
       }
       setBusy(false);
     },
-    [busy, unlock],
+    [busy, unlock, waitMs],
   );
 
   // Submit as soon as the sixth digit lands — no extra tap needed.
@@ -60,25 +72,31 @@ export function LockScreen() {
           Assalamualaikum
         </h1>
         <p className="mt-[7px] mb-0 text-[14.5px]/[1.55] text-tx2">
-          {error
-            ? "PIN belum cocok. Coba lagi, pelan-pelan."
-            : "Masukkan PIN untuk membuka catatanmu."}
+          {waitMs > 0
+            ? `Terlalu banyak percobaan. Coba lagi dalam ${formatWait(waitMs)}.`
+            : error
+              ? "PIN belum cocok. Coba lagi, pelan-pelan."
+              : "Masukkan PIN untuk membuka catatanmu."}
         </p>
       </div>
 
       <PinDots length={PIN_LENGTH} filled={pin.length} error={error} />
 
-      <PinPad onDigit={onDigit} onBackspace={onBackspace} disabled={busy} />
+      <PinPad
+        onDigit={onDigit}
+        onBackspace={onBackspace}
+        disabled={busy || waitMs > 0}
+      />
 
       <div className="flex w-full flex-col gap-3.5 pt-2 pb-4">
         <PrimaryButton
-          disabled={pin.length !== PIN_LENGTH || busy}
+          disabled={pin.length !== PIN_LENGTH || busy || waitMs > 0}
           onClick={() => void submit(pin)}
         >
           {busy ? "Membuka…" : "Buka"}
         </PrimaryButton>
 
-        {attempts >= 2 && (
+        {attempts >= 2 && waitMs === 0 && (
           <p className="m-0 text-center text-[12.5px]/[1.55] text-tx2">
             PIN ini tidak tersimpan di mana pun, jadi kami tidak bisa
             memulihkannya. Kalau benar-benar lupa, satu-satunya jalan adalah
@@ -88,4 +106,14 @@ export function LockScreen() {
       </div>
     </Screen>
   );
+}
+
+/** "1 menit 30 detik" — spelled out, because a bare mm:ss reads like a threat. */
+function formatWait(ms: number): string {
+  const total = Math.ceil(ms / 1000);
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  if (minutes === 0) return `${seconds} detik`;
+  if (seconds === 0) return `${minutes} menit`;
+  return `${minutes} menit ${seconds} detik`;
 }

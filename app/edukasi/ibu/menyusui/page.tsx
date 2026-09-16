@@ -153,7 +153,7 @@ export default function MenyusuiPage() {
                     setDays((d) => Math.max(0, d - 1));
                     setSaved(false);
                   }}
-                  className="transition hover:text-tx"
+                  className="-m-1.5 flex h-6 w-6 items-center justify-center p-1.5 transition hover:text-tx"
                 >
                   <MinusIcon size={15} />
                 </button>
@@ -164,7 +164,7 @@ export default function MenyusuiPage() {
                     setDays((d) => Math.min(60, d + 1));
                     setSaved(false);
                   }}
-                  className="transition hover:text-tx"
+                  className="-m-1.5 flex h-6 w-6 items-center justify-center p-1.5 transition hover:text-tx"
                 >
                   <PlusIcon size={15} />
                 </button>

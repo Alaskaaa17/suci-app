@@ -68,7 +68,7 @@ export default function QadhaShalatPage() {
         </h2>
 
         <div className="flex gap-2.5">
-          <label className="relative flex flex-[1.4] items-center justify-between rounded-[14px] border border-hair px-[13px] py-3">
+          <label className="relative flex flex-[1.4] items-center justify-between rounded-[14px] border border-field-b px-[13px] py-3">
             <span className="sr-only">Waktu shalat</span>
             <select
               value={slot}
@@ -85,7 +85,7 @@ export default function QadhaShalatPage() {
             <ChevronDownIcon size={16} className="text-tx2" />
           </label>
 
-          <div className="flex flex-1 items-center justify-between rounded-[14px] border border-hair px-[13px] py-3">
+          <div className="flex flex-1 items-center justify-between rounded-[14px] border border-field-b px-[13px] py-3">
             <span className="text-[13.5px]/[1] font-medium text-tx">
               {count}×
             </span>
@@ -94,7 +94,7 @@ export default function QadhaShalatPage() {
                 type="button"
                 aria-label="Kurangi"
                 onClick={() => setCount((c) => Math.max(1, c - 1))}
-                className="transition hover:text-tx"
+                className="-m-1.5 flex h-6 w-6 items-center justify-center p-1.5 transition hover:text-tx"
               >
                 <MinusIcon size={15} />
               </button>
@@ -102,7 +102,7 @@ export default function QadhaShalatPage() {
                 type="button"
                 aria-label="Tambah"
                 onClick={() => setCount((c) => Math.min(99, c + 1))}
-                className="transition hover:text-tx"
+                className="-m-1.5 flex h-6 w-6 items-center justify-center p-1.5 transition hover:text-tx"
               >
                 <PlusIcon size={15} />
               </button>
@@ -115,7 +115,7 @@ export default function QadhaShalatPage() {
           onChange={(e) => setReason(e.target.value)}
           placeholder="Alasan, misalnya ketiduran"
           aria-label="Alasan terlewat"
-          className="rounded-[14px] border border-hair bg-transparent px-[13px] py-3 text-[13.5px] text-tx placeholder:text-tx2/75"
+          className="rounded-[14px] border border-field-b bg-transparent px-[13px] py-3 text-[13.5px] text-tx placeholder:text-tx2/75"
         />
 
         <SecondaryButton

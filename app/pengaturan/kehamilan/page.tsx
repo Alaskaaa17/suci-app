@@ -128,7 +128,7 @@ export default function KehamilanPage() {
           </SecondaryButton>
         ) : (
           <>
-            <label className="flex items-center justify-between rounded-[14px] border border-hair px-[13px] py-3">
+            <label className="flex items-center justify-between rounded-[14px] border border-field-b px-[13px] py-3">
               <span className="text-[13px] font-medium text-tx2">
                 Hari pertama haid terakhir
               </span>

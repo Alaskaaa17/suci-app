@@ -32,9 +32,12 @@ npm test             # engine + prayer-time unit tests (33)
 npm run typecheck
 npm run build
 
+npm run test:contrast   # WCAG contrast across both themes
+npm run test:all        # typecheck + lint + unit + contrast
+
 # end-to-end, against a running production build
 npm run build && npm start &
-npm run test:e2e     # 70 checks, including offline
+npm run test:e2e        # 81 checks: flows, offline, security, a11y
 ```
 
 Full-bleed on a phone; on a wide screen it renders inside the 390×844 frame from
@@ -80,6 +83,60 @@ Life phases (pregnancy, nifas, menopause) short-circuit step 4.
 `lib/fiqh/verdict.ts` returns the ruling and the argument for it as one object,
 so there is no way to render a conclusion without its reasoning trail and
 citation attached. That is the promise onboarding makes.
+
+### Security
+
+The threat this is built for is a shared or borrowed phone, not a forensics
+lab. What that means in practice:
+
+- **The vault auto-locks.** Unlocking once and staying open until a reload does
+  not keep the promise onboarding makes, so the app re-locks after two minutes
+  out of sight. Only when hidden, never mid-entry, so no draft is ever lost.
+- **Failed PINs are throttled.** PBKDF2 alone costs about a quarter second a
+  guess, which leaves six digits reachable in days by someone holding the
+  phone. Five free attempts, then escalating lockouts to a 15-minute cap, which
+  puts exhaustion past 25 years. The counter is stored in the clear on purpose:
+  it holds no secret, and it has to survive the reload an attacker would reach
+  for.
+- **`connect-src 'self'`.** With no backend, every outbound request is an
+  exfiltration attempt. This is the header that matters here; a compromised
+  dependency is the realistic threat for an app with no server and no
+  user-generated HTML. `script-src` keeps `'unsafe-inline'` because every page
+  is statically rendered — the reasoning and the conditions for revisiting it
+  are in `next.config.ts`.
+- **The share token is drawn uniformly.** `byte % 31` would push the first
+  eight letters about 3% high; it is the only thing between a guessed URL and
+  someone's cycle status, so it uses rejection sampling. Asserted in
+  `lib/store/crypto.test.ts`.
+
+Known and accepted: `npm audit` reports a postcss advisory reachable only
+through Next's own build pipeline, on CSS we author ourselves. Clearing it
+needs Next 16. It does not ship to the browser.
+
+### Accessibility
+
+Audited against WCAG 2.2 Level AA. `npm run test:contrast` measures every
+text/background pair the design uses, in both themes, reading the tokens
+straight out of `globals.css` so it cannot drift from what ships.
+
+All text passes AA in both themes on the designer's palette. Two things changed:
+
+- **Form controls got their own border token.** `--hair` sits at 1.25:1 against
+  the page — fine for a decorative divider, but it left text fields with no
+  visible box, and there the border is the whole affordance. `--field-b` meets
+  3:1 and is used only on inputs, selects and the date fields, so the rest of
+  the design keeps its lightness.
+- **Targets reach 24×24.** Back links were 20px tall and the ± steppers 15×15,
+  both under 2.5.8. Negative margins absorb the added padding, so nothing moved.
+
+The pastel card borders sit below 3:1 and are left alone. They are reported,
+not failed: each surrounds its own distinct fill, beside a glyph, beside a text
+label, so no border is ever the only thing carrying meaning — which is the
+design's own rule, and what 1.4.11 actually asks about.
+
+Beranda also gained an `h1` (the greeting), and the PIN pad takes physical
+keyboard input — a keypad that only answers to taps is unusable with a keyboard
+or a switch device.
 
 ### Storage and the PIN
 

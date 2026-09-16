@@ -89,7 +89,7 @@ export default function PengaturanPage() {
             })
           }
           placeholder="Dipakai untuk menyapamu di Beranda"
-          className="rounded-2xl border border-hair bg-transparent px-[15px] py-3 text-sm text-tx placeholder:text-tx2/70"
+          className="rounded-2xl border border-field-b bg-transparent px-[15px] py-3 text-sm text-tx placeholder:text-tx2/70"
         />
       </label>
 
@@ -174,7 +174,7 @@ export default function PengaturanPage() {
       <div className="flex gap-2.5">
         <div className="flex-1">
           <SectionLabel>Metode hisab</SectionLabel>
-          <label className="relative mt-2 flex items-center justify-between rounded-[14px] border border-hair px-[13px] py-3">
+          <label className="relative mt-2 flex items-center justify-between rounded-[14px] border border-field-b px-[13px] py-3">
             <span className="sr-only">Metode hisab</span>
             <select
               value={profile.prayerMethod}
@@ -201,7 +201,7 @@ export default function PengaturanPage() {
 
         <div className="flex-1">
           <SectionLabel>Lokasi</SectionLabel>
-          <label className="relative mt-2 flex items-center gap-2 rounded-[14px] border border-hair px-[13px] py-3">
+          <label className="relative mt-2 flex items-center gap-2 rounded-[14px] border border-field-b px-[13px] py-3">
             <span className="sr-only">Lokasi</span>
             <select
               value={profile.location.label}
@@ -300,7 +300,7 @@ function DateField({
   onChange: (v: string) => void;
 }) {
   return (
-    <label className="flex items-center justify-between rounded-[14px] border border-hair px-[13px] py-3">
+    <label className="flex items-center justify-between rounded-[14px] border border-field-b px-[13px] py-3">
       <span className="text-[13px] font-medium text-tx2">{label}</span>
       <input
         type="date"
