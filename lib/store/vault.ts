@@ -316,6 +316,48 @@ export function approximateSize(data: VaultData): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/* ---------------------------- import --------------------------------------
+   The counterpart to `toExportJson`. What comes back is a file the user
+   picked off their own device — it could be a genuine Suci backup, a
+   corrupted download, or something else entirely — so it is checked
+   structurally rather than trusted by a type cast, per the same rule that
+   governs every other boundary in this app. A file that passes is still run
+   through `migrate`, so a backup taken by an older build opens cleanly.
+   -------------------------------------------------------------------------- */
+
+export type ImportResult =
+  | { ok: true; data: VaultData }
+  | { ok: false; reason: "unreadable" | "wrong-shape" };
+
+function looksLikeVault(value: unknown): value is VaultData {
+  if (typeof value !== "object" || value === null) return false;
+  const v = value as Record<string, unknown>;
+  const profile = v.profile;
+  if (typeof profile !== "object" || profile === null) return false;
+  const p = profile as Record<string, unknown>;
+  return (
+    v.version === 1 &&
+    typeof p.name === "string" &&
+    typeof p.madhhab === "string" &&
+    typeof v.entries === "object" &&
+    v.entries !== null &&
+    Array.isArray(v.qadhaPrayers) &&
+    typeof v.qadhaFast === "object" &&
+    v.qadhaFast !== null
+  );
+}
+
+export function parseImportedVault(raw: string): ImportResult {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { ok: false, reason: "unreadable" };
+  }
+  if (!looksLikeVault(parsed)) return { ok: false, reason: "wrong-shape" };
+  return { ok: true, data: migrate(parsed) };
+}
+
 /** Entries as a sorted array, which is what the engine wants. */
 export function entryList(data: VaultData): DayEntry[] {
   return Object.values(data.entries).sort((a, b) =>

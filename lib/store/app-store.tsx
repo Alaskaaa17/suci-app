@@ -55,11 +55,15 @@ interface AppState {
     name: string;
     madhhab: Profile["madhhab"];
     pin: string | null;
+    /** A previously exported vault to seed instead of starting empty. */
+    restore?: VaultData;
   }) => Promise<void>;
   lock: () => void;
 
   /** Resolves once the change is encrypted and written to disk. */
   update: (fn: (draft: VaultData) => void) => Promise<void>;
+  /** Overwrites the whole vault from a validated backup. Keeps the current PIN. */
+  restoreVault: (next: VaultData) => Promise<void>;
   setEntry: (date: IsoDate, patch: Partial<DayEntry>) => Promise<void>;
   entryFor: (date: IsoDate) => DayEntry;
   verdictFor: (date: IsoDate) => Verdict | null;
@@ -209,13 +213,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       name,
       madhhab,
       pin,
+      restore,
     }: {
       name: string;
       madhhab: Profile["madhhab"];
       pin: string | null;
+      restore?: VaultData;
     }) => {
-      const vault = emptyVault(name);
-      vault.profile.madhhab = madhhab;
+      const vault = restore ?? emptyVault(name);
+      if (!restore) vault.profile.madhhab = madhhab;
       pinRef.current = pin;
       if (!pin) localStorage.setItem(NO_PIN_KEY, "1");
       await saveVault(vault, pin);
@@ -224,6 +230,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     },
     [],
   );
+
+  /**
+   * Replaces the whole vault with a validated backup, sealed under whatever
+   * PIN is already active. Distinct from `update`, which patches a draft of
+   * the current vault — a restore is not a patch, it is a new source of truth.
+   */
+  const restoreVault = useCallback((next: VaultData) => {
+    dataRef.current = next;
+    setData(next);
+    writeChain.current = writeChain.current
+      .catch(() => {})
+      .then(() => saveVault(next, pinRef.current));
+    return writeChain.current;
+  }, []);
 
   const eraseEverything = useCallback(() => {
     destroyVault();
@@ -366,6 +386,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       completeOnboarding,
       lock,
       update,
+      restoreVault,
       setEntry,
       entryFor,
       verdictFor,
@@ -383,6 +404,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       completeOnboarding,
       lock,
       update,
+      restoreVault,
       setEntry,
       entryFor,
       verdictFor,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { PinBoxes, PIN_LENGTH } from "@/components/pin-pad";
 import { Screen } from "@/components/shell";
 import {
@@ -10,6 +10,7 @@ import {
   InfoIcon,
   LockIcon,
   ShieldCheckIcon,
+  UploadIcon,
 } from "@/components/icons";
 import {
   CheckBox,
@@ -23,6 +24,7 @@ import { MADHHAB_ORDER, MADHHABS, DEFAULT_MADHHAB } from "@/lib/fiqh/madhhab";
 import type { MadhhabId } from "@/lib/fiqh/madhhab";
 import { useApp } from "@/lib/store/app-store";
 import { isCryptoAvailable } from "@/lib/store/crypto";
+import { parseImportedVault, type VaultData } from "@/lib/store/vault";
 
 type Step = 1 | 2 | 3;
 
@@ -39,11 +41,40 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  /** Set once a backup file has been picked and validated; carries name and
+   *  madhhab through, so step 2 is skipped rather than asking for them again. */
+  const [restoredVault, setRestoredVault] = useState<VaultData | null>(null);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  async function handleBackupFile(file: File) {
+    setRestoreError(null);
+    const text = await file.text();
+    const result = parseImportedVault(text);
+    if (!result.ok) {
+      setRestoreError(
+        result.reason === "unreadable"
+          ? "Berkas ini bukan JSON yang sah."
+          : "Berkas ini bukan cadangan Suci, atau bentuknya sudah berubah.",
+      );
+      return;
+    }
+    setRestoredVault(result.data);
+    setName(result.data.profile.name);
+    setMadhhab(result.data.profile.madhhab);
+    setStep(3);
+  }
+
   async function finish(withPin: string | null) {
     setBusy(true);
     setError(null);
     try {
-      await completeOnboarding({ name: name.trim(), madhhab, pin: withPin });
+      await completeOnboarding({
+        name: name.trim(),
+        madhhab,
+        pin: withPin,
+        restore: restoredVault ?? undefined,
+      });
       router.replace("/");
     } catch (e) {
       setError(
@@ -125,6 +156,31 @@ export default function OnboardingPage() {
               Centang dulu kotak di atas untuk melanjutkan.
             </p>
           )}
+
+          <input
+            ref={fileInput}
+            type="file"
+            accept="application/json"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = ""; // same file picked twice still fires onChange
+              if (file) void handleBackupFile(file);
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => fileInput.current?.click()}
+            className="flex items-center justify-center gap-2 py-1 text-[13px]/[1] font-semibold text-tx2 transition hover:text-tx"
+          >
+            <UploadIcon size={15} />
+            Sudah punya cadangan? Pulihkan di sini
+          </button>
+          {restoreError && (
+            <p className="m-0 text-center text-[12px]/[1.5] text-peach-tx">
+              {restoreError}
+            </p>
+          )}
         </div>
       </Screen>
     );
@@ -200,6 +256,13 @@ export default function OnboardingPage() {
           Enam angka saja. Ini yang membuat catatanmu tetap jadi urusanmu
           sendiri.
         </p>
+        {restoredVault && (
+          <p className="m-0 max-w-[290px] text-center text-[12.5px]/[1.5] text-sage-tx">
+            Memulihkan cadangan atas nama {restoredVault.profile.name || "kamu"}{" "}
+            — {Object.keys(restoredVault.entries).length} catatan harian.
+            Kuncinya dipasang ulang dengan PIN yang kamu buat sekarang.
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col gap-[18px] pt-1">

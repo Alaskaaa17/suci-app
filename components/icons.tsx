@@ -307,6 +307,15 @@ export function DownloadIcon({ strokeWidth = 1.7, ...rest }: IconProps) {
   );
 }
 
+/** DownloadIcon's arrow mirrored, for restoring a backup back into the app. */
+export function UploadIcon({ strokeWidth = 1.7, ...rest }: IconProps) {
+  return (
+    <Svg strokeWidth={strokeWidth} {...rest} round={false}>
+      <path d="M12 15V4M8 8l4-4 4 4M5 20h14" />
+    </Svg>
+  );
+}
+
 export function TrashIcon({ strokeWidth = 1.7, ...rest }: IconProps) {
   return (
     <Svg strokeWidth={strokeWidth} {...rest} round={false}>
