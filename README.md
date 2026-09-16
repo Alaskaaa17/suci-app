@@ -43,6 +43,23 @@ npm run test:e2e        # 81 checks: flows, offline, security, a11y
 Full-bleed on a phone; on a wide screen it renders inside the 390×844 frame from
 the design canvas.
 
+### Deploying
+
+Vercel works with no configuration: standard Next.js, no backend, no
+environment variables, nothing to provision. Push the repo, import it, done.
+The build command and output are the defaults.
+
+Two things are handled in `next.config.ts` rather than left to the platform:
+
+- **`/sw.js` must always revalidate.** A CDN holding an old service worker
+  would pin every installed user to a stale app with no way to update — the
+  worst failure mode a PWA has.
+- **`/s/` share pages are `no-store` and `noindex`.** They are the only pages
+  anyone else opens, and nothing should sit between the user and the reader.
+
+Note that the share link embeds whatever origin it was generated on, so a link
+made on a preview deployment points at that preview.
+
 ### Installing it
 
 Suci is a PWA. Open it on a phone and use "Add to Home Screen" — it then runs

@@ -59,6 +59,27 @@ const nextConfig: NextConfig = {
     return [
       { source: "/:path*", headers: securityHeaders },
       {
+        // The service worker must always be revalidated. A CDN holding an old
+        // copy would pin every installed user to a stale app with no way to
+        // update, which is the worst failure mode a PWA has.
+        source: "/sw.js",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, must-revalidate",
+          },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
+      {
+        // Icons are not content-hashed, so they revalidate daily rather than
+        // being pinned for a year.
+        source: "/:icon(icon-.*\\.png)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=86400, must-revalidate" },
+        ],
+      },
+      {
         // The share page is the only thing anyone else ever opens. Nothing may
         // cache it between the user and the reader, and it must never be
         // indexed.
