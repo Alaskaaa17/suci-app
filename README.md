@@ -28,7 +28,7 @@ what it models it says so and points the user to a person, rather than guessing.
 ```bash
 npm install
 npm run dev          # http://localhost:3000
-npm test             # engine, prayer times, crypto, storage, share API (100)
+npm test             # engine, prayer times, crypto, links, storage, API (109)
 npm run typecheck
 npm run build
 
@@ -37,7 +37,7 @@ npm run test:all        # typecheck + lint + unit + contrast
 
 # end-to-end, against a running production build
 npm run build && npm start &
-npm run test:e2e        # 101 checks: flows, offline, security, a11y
+npm run test:e2e        # 102 checks: flows, offline, security, a11y
 ```
 
 Full-bleed on a phone; on a wide screen it renders inside the 390×844 frame from
@@ -289,6 +289,18 @@ omits this is worse than no claim:
 - **The reader's device remembers the key**, so a bookmark still works. That
   is a decryption key in their localStorage; the reader's page says so and
   offers a button to clear it.
+- **A key that arrives in the query string has already reached the server.**
+  Some chat apps and link cleaners rewrite `#` into `?`. The page still shows
+  the status — refusing would punish the reader for something neither of them
+  did — but it says the link is burned and must be replaced.
+
+Links do not arrive the way they were sent, so the key is recovered from the
+link by shape (`k=` followed by exactly 43 base64url characters) rather than by
+trusting the whole fragment to parse. Pasting a link into a box that already
+held it produces `#k=<key><whole URL again>`, which `URLSearchParams` reports
+as one 90-character value; the page used to call that "tersalin setengah",
+which was both wrong and unactionable. `lib/store/share-link.test.ts` holds the
+real-world shapes.
 
 The payload itself is guarded in `lib/share/payload.ts`. Encryption protects it
 from the operator, not from the person holding the link — so "the server cannot

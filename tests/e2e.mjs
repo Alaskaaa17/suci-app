@@ -364,8 +364,15 @@ check("a second visit without the fragment still opens", true);
 await readerPage.getByRole("button", { name: /Lupakan tautan ini/ }).click();
 await readerPage.waitForSelector("text=Kunci dihapus", { timeout: 8000 });
 await openReader(`${BASE}/s/${shareId}`);
-await readerPage.waitForSelector("text=Tautannya belum lengkap", { timeout: 15000 });
+await readerPage.waitForSelector("text=Kuncinya tidak terbaca", { timeout: 15000 });
 check("forgetting the key really forgets it", true);
+
+// A link pasted twice: the key is intact, just followed by a second copy of
+// the whole URL. This is what actually reached a user, and the page used to
+// tell them the link was "copied halfway" — wrong, and unfixable by them.
+await openReader(`${link}${link}`);
+await readerPage.waitForSelector("text=Hari ini dia", { timeout: 15000 });
+check("a link pasted twice still opens", true);
 
 // A link whose key is wrong must say so, and must not fall back to anything.
 await openReader(`${BASE}/s/${shareId}#k=${"A".repeat(43)}`);
@@ -411,7 +418,7 @@ check(
 );
 check(
   "an unresolvable link says why",
-  /Belum bisa menampilkan status|Tautannya belum lengkap/.test(unknownCopy),
+  /Belum bisa menampilkan status|Kuncinya tidak terbaca/.test(unknownCopy),
 );
 
 // Turning Mode Suami off must kill the link for everyone, immediately.

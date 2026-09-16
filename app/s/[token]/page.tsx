@@ -10,7 +10,7 @@ import { Classification } from "@/lib/fiqh/types";
 import {
   fetchSharedStatus,
   forgetShareKeys,
-  keyFromFragment,
+  keyFromLink,
   recallShareKey,
   rememberShareKey,
   type SharePageResult,
@@ -33,8 +33,8 @@ const EXPLANATIONS: Record<
     body: "Sambungan internet sedang tidak bisa dipakai. Coba lagi sebentar lagi.",
   },
   "no-key": {
-    title: "Tautannya belum lengkap",
-    body: "Bagian kunci di akhir tautan hilang — biasanya karena tersalin setengah. Minta tautan utuhnya dikirim ulang, lalu buka sekali dari situ.",
+    title: "Kuncinya tidak terbaca",
+    body: "Tautan ini perlu bagian setelah tanda # untuk bisa dibuka. Bagian itu tidak ditemukan — mungkin terpotong, atau hilang saat dikirim lewat aplikasi pesan. Minta tautan utuhnya dikirim ulang, lalu buka langsung dari situ.",
   },
   "wrong-key": {
     title: "Kunci ini tidak cocok",
@@ -64,14 +64,16 @@ export default function SharedStatusPage() {
   const [result, setResult] = useState<SharePageResult | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [cleared, setCleared] = useState(false);
+  const [exposed, setExposed] = useState(false);
 
   const load = useCallback(async () => {
-    // The fragment first, because it is the freshest thing the reader has;
-    // then the remembered copy, for the second visit where a bookmark or a
-    // history entry dropped everything after the `#`.
-    const fromLink = keyFromFragment();
-    if (fromLink) rememberShareKey(id, fromLink);
-    const key = fromLink ?? recallShareKey(id);
+    // The link first, because it is the freshest thing the reader has; then
+    // the remembered copy, for the second visit where a bookmark or a history
+    // entry dropped everything after the `#`.
+    const fromLink = keyFromLink();
+    if (fromLink.key) rememberShareKey(id, fromLink.key);
+    setExposed(fromLink.exposed);
+    const key = fromLink.key ?? recallShareKey(id);
     return fetchSharedStatus(id, key);
   }, [id]);
 
@@ -138,6 +140,18 @@ export default function SharedStatusPage() {
       className="items-center justify-center gap-[22px] px-7"
     >
       <Brand />
+
+      {exposed && (
+        <div className="animate-rise w-full rounded-2xl border border-peach-b bg-peach px-4 py-3">
+          <p className="m-0 text-[12.5px]/[1.55] text-tx">
+            <span className="font-semibold">Tautan ini perlu diganti.</span>{" "}
+            Kuncinya sampai ke sini lewat bagian alamat yang ikut terkirim ke
+            server, bukan bagian setelah tanda #. Statusnya masih bisa
+            ditampilkan, tapi kerahasiaannya sudah tidak utuh — mintalah tautan
+            baru, dan buka langsung dari pesan aslinya.
+          </p>
+        </div>
+      )}
 
       <div
         className={cx(

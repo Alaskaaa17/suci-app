@@ -167,18 +167,61 @@ export function forgetShareKeys(): void {
 }
 
 /**
- * The key from `#k=...`, if this page was opened with one.
+ * A key is exactly 43 base64url characters, so it can be lifted out of a
+ * mangled link by shape rather than by trusting the whole string to parse.
  *
- * Read from `location.hash` and never written anywhere that could send it. A
+ * This matters because links get mauled in transit. Pasting one into a box
+ * that already held it produces `#k=<key>https://…/s/<id>#k=<key>`, and
+ * `URLSearchParams` then reports a 90-character value and the page tells the
+ * reader their link was "copied halfway" — an accusation that is both wrong
+ * and unfixable by them, when the key was sitting right there intact.
+ *
+ * Anchored to `k=` so it cannot pick the shareId or some other run of
+ * base64url out of the surrounding noise, and taking exactly 43 so whatever
+ * was concatenated after it is left behind. A key is never longer than 43, so
+ * a longer run means corruption — and the first 43 of it then fails the GCM
+ * tag check, which reports "kunci tidak cocok" rather than guessing.
+ */
+const KEY_IN_TEXT = /(?:^|[#&?])k=([A-Za-z0-9_-]{43})/;
+
+function extractKey(text: string): string | null {
+  const found = KEY_IN_TEXT.exec(text)?.[1];
+  return found && SHARE_KEY_PATTERN.test(found) ? found : null;
+}
+
+export interface KeyFromLink {
+  key: string | null;
+  /**
+   * True when the key arrived in the query string instead of the fragment.
+   *
+   * Some messaging apps and link "cleaners" rewrite `#` into `?`. A fragment
+   * never leaves the browser; a query string is in the request line, so by the
+   * time this page runs the key has already been handed to the server and to
+   * anything logging for it. The status can still be shown — refusing would
+   * punish the reader for something neither of them did — but the link is
+   * burned and the page says so.
+   */
+  exposed: boolean;
+}
+
+/**
+ * The key this page was opened with.
+ *
+ * Read from `location` and never written anywhere that could send it. A
  * fragment is not transmitted by any browser — not on navigation, not on
  * fetch, not in Referer — which is the single mechanism the whole design rests
  * on, so nothing in this codebase may move it into a path or a query.
  */
-export function keyFromFragment(): string | null {
-  if (typeof window === "undefined") return null;
-  const hash = window.location.hash.replace(/^#/, "");
-  const found = new URLSearchParams(hash).get("k");
-  return found && SHARE_KEY_PATTERN.test(found) ? found : null;
+export function keyFromLink(): KeyFromLink {
+  if (typeof window === "undefined") return { key: null, exposed: false };
+
+  const fromFragment = extractKey(window.location.hash);
+  if (fromFragment) return { key: fromFragment, exposed: false };
+
+  const fromQuery = extractKey(window.location.search);
+  if (fromQuery) return { key: fromQuery, exposed: true };
+
+  return { key: null, exposed: false };
 }
 
 export async function fetchSharedStatus(

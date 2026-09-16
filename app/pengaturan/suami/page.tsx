@@ -176,9 +176,22 @@ export default function ModeSuamiPage() {
             </span>
             <span className="mt-1 block text-[12px]/[1.5] text-tx2">
               Server tempat Suci dipasang belum punya penyimpanan status yang
-              tetap, jadi tautan yang kamu bagikan bisa terbuka kosong di
-              ponselnya. Catatanmu sendiri tetap aman di ponsel ini. Penyimpanan
-              itu perlu disambungkan dulu, lalu aplikasinya dipasang ulang.
+              tetap, jadi tautan yang kamu bagikan akan terbuka kosong di
+              ponselnya. Catatanmu sendiri tetap aman di ponsel ini.
+            </span>
+            {/*
+              The person reading this is the person who deployed the app, so
+              the fix belongs here rather than in a README they would have to
+              go looking for. Vague advice on a screen like this is how the
+              last three days were spent.
+            */}
+            <span className="mt-2 block text-[11.5px]/[1.5] text-tx2">
+              Yang perlu dilakukan sekali: sambungkan penyimpanan di Vercel
+              (Storage → Upstash Redis, atau Edge Config), isi variabel
+              lingkungannya, lalu Redeploy. Kalau sudah, buka{" "}
+              <code className="font-semibold text-tx">/api/share</code> — ia
+              harus menjawab{" "}
+              <code className="font-semibold text-tx">durable: true</code>.
             </span>
           </span>
         </section>
