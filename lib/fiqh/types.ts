@@ -34,15 +34,34 @@ export interface Profile {
   /** Coordinates, UTC offset and method for prayer times. */
   location: { label: string; lat: number; lng: number; tz: number };
   prayerMethod: PrayerMethodId;
-  /** Husband-mode share token; absent means sharing is off. */
-  shareToken?: string;
+  /** Husband-mode sharing; absent means it is off. */
+  share?: ShareSession;
   /**
-   * Proves a status update comes from this device. Lives only inside the
-   * encrypted vault and is never put in the link, so someone holding the URL
-   * can read the status but cannot change it.
+   * A pre-encryption share token left over from an older build, kept only long
+   * enough to delete its row on the server. See `migrate` in `vault.ts`.
    */
-  shareSecret?: string;
+  legacyShare?: { token: string; secret: string };
   onboardedAt?: string;
+}
+
+/**
+ * One share session, held in the sender's encrypted vault.
+ *
+ * Note what is NOT derived from what. `key` is generated fresh from the CSPRNG
+ * and has no relationship to the PIN, to the vault key, or to `id`. Handing a
+ * reader something derived from her master key would make the link a foothold
+ * into everything else she owns; it is not one.
+ */
+export interface ShareSession {
+  /** The server's name for this session. Travels in the URL path. */
+  id: string;
+  /** AES-256-GCM, base64url. Travels in the URL fragment, never to a server. */
+  key: string;
+  /** Travels nowhere. Proves a write or a deletion comes from this device. */
+  secret: string;
+  /** What was last sent, so unchanged statuses do not spend a write. */
+  lastState?: "haid" | "suci";
+  lastPublishedAt?: string;
 }
 
 export type PrayerMethodId = "kemenag" | "mwl" | "isna" | "egypt" | "makkah";

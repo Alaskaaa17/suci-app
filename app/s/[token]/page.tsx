@@ -1,19 +1,23 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { CrescentIcon, PinIcon } from "@/components/icons";
+import { useCallback, useEffect, useState } from "react";
+import { CrescentIcon, PinIcon, RefreshIcon } from "@/components/icons";
 import { Screen } from "@/components/shell";
 import { StatusGlyph } from "@/components/status-glyph";
 import { cx, IconBubble, Pill } from "@/components/ui";
 import { Classification } from "@/lib/fiqh/types";
 import {
   fetchSharedStatus,
+  forgetShareKeys,
+  keyFromFragment,
+  recallShareKey,
+  rememberShareKey,
   type SharePageResult,
 } from "@/lib/store/share-client";
 
 const EXPLANATIONS: Record<
-  "gone" | "unavailable" | "offline",
+  Exclude<SharePageResult["status"], "ok">,
   { title: string; body: string }
 > = {
   gone: {
@@ -28,41 +32,65 @@ const EXPLANATIONS: Record<
     title: "Belum bisa memuat",
     body: "Sambungan internet sedang tidak bisa dipakai. Coba lagi sebentar lagi.",
   },
+  "no-key": {
+    title: "Tautannya belum lengkap",
+    body: "Bagian kunci di akhir tautan hilang — biasanya karena tersalin setengah. Minta tautan utuhnya dikirim ulang, lalu buka sekali dari situ.",
+  },
+  "wrong-key": {
+    title: "Kunci ini tidak cocok",
+    body: "Isinya ada, tapi tidak bisa dibuka dengan kunci di tautan ini. Kemungkinan pemiliknya sudah mengganti tautan. Minta yang terbaru.",
+  },
+  unreadable: {
+    title: "Versinya berbeda",
+    body: "Isinya terbuka, tapi bentuknya dari versi Suci yang lebih baru. Muat ulang halaman ini, atau minta tautan yang baru.",
+  },
 };
 
 /**
  * Screen 22 — the page a husband opens.
  *
- * Reads one bit from the share endpoint and renders it. There is no route back
- * into the app from here, nothing is stored locally by the reader, and the
- * page never touches the vault — it has no business opening it, and on
+ * Everything that matters here happens on this device. The shareId in the path
+ * fetches a sealed envelope; the key comes from the URL fragment, which no
+ * browser transmits; the decryption happens in this component. The server that
+ * handed over the ciphertext has no way to know what it said.
+ *
+ * The page never touches the vault — it has no business opening it, and on
  * someone else's phone there is nothing to open.
  */
 export default function SharedStatusPage() {
   const params = useParams<{ token: string }>();
+  const id = params.token;
+
   const [result, setResult] = useState<SharePageResult | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [cleared, setCleared] = useState(false);
+
+  const load = useCallback(async () => {
+    // The fragment first, because it is the freshest thing the reader has;
+    // then the remembered copy, for the second visit where a bookmark or a
+    // history entry dropped everything after the `#`.
+    const fromLink = keyFromFragment();
+    if (fromLink) rememberShareKey(id, fromLink);
+    const key = fromLink ?? recallShareKey(id);
+    return fetchSharedStatus(id, key);
+  }, [id]);
 
   useEffect(() => {
     let cancelled = false;
-    void fetchSharedStatus(params.token).then((r) => {
+    void load().then((r) => {
       if (!cancelled) setResult(r);
     });
-
-    // Someone leaves this page open; refresh when they come back to it rather
-    // than showing yesterday's answer.
-    const onVisible = () => {
-      if (document.visibilityState !== "visible") return;
-      void fetchSharedStatus(params.token).then((r) => {
-        if (!cancelled) setResult(r);
-      });
-    };
-    document.addEventListener("visibilitychange", onVisible);
-
     return () => {
       cancelled = true;
-      document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [params.token]);
+  }, [load]);
+
+  const refresh = async () => {
+    setRefreshing(true);
+    const next = await load();
+    setResult(next);
+    setRefreshing(false);
+  };
 
   if (result === null) {
     return (
@@ -74,7 +102,7 @@ export default function SharedStatusPage() {
   }
 
   if (result.status !== "ok") {
-    // Three different things went wrong, and they are not each other's fault.
+    // Six different things went wrong and they are not each other's fault.
     // Only one of them is the owner's doing, so only one of them says so.
     const message = EXPLANATIONS[result.status];
     return (
@@ -90,13 +118,11 @@ export default function SharedStatusPage() {
           {result.status !== "gone" && (
             <button
               type="button"
-              onClick={() => {
-                setResult(null);
-                void fetchSharedStatus(params.token).then(setResult);
-              }}
-              className="mt-5 min-h-[44px] rounded-full border border-rose-b bg-rose px-6 text-[13px]/[1] font-semibold text-tx transition active:scale-[.97] hover:brightness-95"
+              onClick={refresh}
+              disabled={refreshing}
+              className="mt-5 min-h-[44px] rounded-full border border-rose-b bg-rose px-6 text-[13px]/[1] font-semibold text-tx transition active:scale-[.97] hover:brightness-95 disabled:opacity-50"
             >
-              Coba lagi
+              {refreshing ? "Memuat…" : "Coba lagi"}
             </button>
           )}
         </div>
@@ -104,7 +130,7 @@ export default function SharedStatusPage() {
     );
   }
 
-  const haid = result.state === "haid";
+  const haid = result.payload.state === "haid";
 
   return (
     <Screen
@@ -147,6 +173,19 @@ export default function SharedStatusPage() {
             ? "Shalat dan puasanya sedang libur. Doakan dan temani saja — itu sudah banyak artinya."
             : "Shalat dan puasanya berjalan seperti biasa. Doakan dan temani saja — itu sudah banyak artinya."}
         </p>
+
+        <button
+          type="button"
+          onClick={refresh}
+          disabled={refreshing}
+          className={cx(
+            "mt-1 inline-flex min-h-[44px] items-center gap-2 rounded-full border bg-bg px-5 text-[13px]/[1] font-semibold transition active:scale-[.97] hover:brightness-95 disabled:opacity-50",
+            haid ? "border-rose-b text-tx" : "border-sage-b text-sage-tx",
+          )}
+        >
+          <RefreshIcon size={14} className={refreshing ? "animate-spin" : ""} />
+          {refreshing ? "Memuat…" : "Segarkan"}
+        </button>
       </div>
 
       <div className="flex w-full flex-col gap-2.5">
@@ -156,13 +195,31 @@ export default function SharedStatusPage() {
           </IconBubble>
           <span className="text-[12.5px]/[1.5] text-tx2">
             Halaman ini hanya menampilkan status hari ini. Tidak ada tanggal,
-            catatan, atau riwayat.
+            catatan, atau riwayat. Isinya terkunci — server yang meneruskannya
+            pun tidak bisa membacanya.
           </span>
         </div>
+
         <p className="m-0 text-center text-[12px]/[1.5] text-tx2">
-          {result.source === "device"
-            ? "Sedang offline · menampilkan salinan di perangkat ini"
-            : "Diperbarui otomatis · dibagikan olehnya"}
+          Tidak berubah sendiri. Ketuk Segarkan untuk memeriksa lagi.
+        </p>
+
+        <button
+          type="button"
+          onClick={() => {
+            forgetShareKeys();
+            setCleared(true);
+          }}
+          className="min-h-[44px] rounded-full border border-hair px-4 text-[12px]/[1] font-medium text-tx2 transition hover:border-rose-b hover:text-tx"
+        >
+          {cleared
+            ? "Kunci dihapus dari perangkat ini"
+            : "Lupakan tautan ini di perangkat ini"}
+        </button>
+        <p className="m-0 text-center text-[11.5px]/[1.5] text-tx2">
+          Supaya bisa dibuka lagi tanpa tautan penuh, kuncinya disimpan di
+          peramban ini. Menutup tab tidak menghapusnya — tombol di atas yang
+          menghapusnya.
         </p>
       </div>
     </Screen>

@@ -16,12 +16,16 @@ import {
   PrimaryButton,
   SecondaryButton,
 } from "@/components/ui";
-import { generateShareToken } from "@/lib/store/crypto";
+import {
+  generateShareId,
+  generateShareKey,
+  generateShareSecret,
+} from "@/lib/store/crypto";
 import {
   fetchShareStorage,
-  generateShareSecret,
   publishShare,
   revokeShare,
+  shareUrl,
   type ShareStorage,
 } from "@/lib/store/share-client";
 import { Classification } from "@/lib/fiqh/types";
@@ -52,12 +56,14 @@ export default function ModeSuamiPage() {
   }, []);
 
   if (!data) return null;
-  const token = data.profile.shareToken;
-  const secret = data.profile.shareSecret;
+  const share = data.profile.share;
 
+  // The key sits after the `#`, which is what keeps it off the wire. Building
+  // this string is the only place it is ever concatenated into a URL, and it
+  // must never move ahead of the fragment marker.
   const url =
-    token && typeof window !== "undefined"
-      ? `${window.location.origin}/s/${token}`
+    share && typeof window !== "undefined"
+      ? shareUrl(window.location.origin, share.id, share.key)
       : null;
 
   const currentState =
@@ -67,15 +73,40 @@ export default function ModeSuamiPage() {
       ? "haid"
       : "suci";
 
+  /**
+   * A whole new session: new id, new key, new write secret, none of them
+   * derived from anything the previous link used or from her PIN. Rotating
+   * therefore does not merely rename the old link — it makes the old key
+   * useless against the new ciphertext.
+   */
+  const startSession = async () => {
+    const next = {
+      id: generateShareId(),
+      key: await generateShareKey(),
+      secret: generateShareSecret(),
+    };
+    const publishedAt = new Date().toISOString();
+    await update((draft) => {
+      draft.profile.share = { ...next };
+    });
+    const published = await publishShare(next, {
+      v: 1,
+      state: currentState,
+      updatedAt: publishedAt,
+    });
+    if (published.storage !== "unknown") setStorage(published.storage);
+    if (published.ok) {
+      await update((draft) => {
+        if (draft.profile.share?.id !== next.id) return;
+        draft.profile.share.lastState = currentState;
+        draft.profile.share.lastPublishedAt = publishedAt;
+      });
+    }
+  };
+
   const enable = async () => {
     setBusy("on");
-    const next = { token: generateShareToken(), secret: generateShareSecret() };
-    await update((draft) => {
-      draft.profile.shareToken = next.token;
-      draft.profile.shareSecret = next.secret;
-    });
-    const published = await publishShare(next, currentState);
-    if (published.storage !== "unknown") setStorage(published.storage);
+    await startSession();
     setBusy(null);
   };
 
@@ -84,23 +115,16 @@ export default function ModeSuamiPage() {
     // Revoke first, so the old URL stops resolving even if the new one fails
     // to publish. A link that outlives its replacement is the failure that
     // matters here.
-    if (token && secret) await revokeShare({ token, secret });
-    const next = { token: generateShareToken(), secret: generateShareSecret() };
-    await update((draft) => {
-      draft.profile.shareToken = next.token;
-      draft.profile.shareSecret = next.secret;
-    });
-    const published = await publishShare(next, currentState);
-    if (published.storage !== "unknown") setStorage(published.storage);
+    if (share) await revokeShare(share);
+    await startSession();
     setBusy(null);
   };
 
   const disable = async () => {
     setBusy("off");
-    if (token && secret) await revokeShare({ token, secret });
+    if (share) await revokeShare(share);
     await update((draft) => {
-      delete draft.profile.shareToken;
-      delete draft.profile.shareSecret;
+      delete draft.profile.share;
     });
     setBusy(null);
   };
@@ -116,7 +140,7 @@ export default function ModeSuamiPage() {
     }
   };
 
-  const share = async () => {
+  const sendToApp = async () => {
     if (!url) return;
     try {
       await navigator.share({
@@ -182,7 +206,7 @@ export default function ModeSuamiPage() {
         ))}
       </section>
 
-      {token ? (
+      {share ? (
         <section className="animate-rise flex flex-col gap-3 rounded-[20px] border border-rose-b bg-rose p-[17px]">
           <div className="flex items-center justify-between gap-2">
             <h2 className="m-0 text-[15px]/[1.3] font-semibold text-tx">
@@ -209,8 +233,12 @@ export default function ModeSuamiPage() {
             </span>
           </div>
 
-          <code className="rounded-[14px] border border-rose-b bg-bg px-3.5 py-3 text-[12.5px]/[1.5] font-medium break-all text-tx2">
-            {url ?? `…/s/${token}`}
+          <code
+            id="tautan-aktif"
+            aria-label="Tautan berbagi"
+            className="rounded-[14px] border border-rose-b bg-bg px-3.5 py-3 text-[12.5px]/[1.5] font-medium break-all text-tx2"
+          >
+            {url ?? `…/s/${share.id}`}
           </code>
 
           <p className="m-0 text-[12px]/[1.5] text-tx2">
@@ -225,7 +253,7 @@ export default function ModeSuamiPage() {
             <ShareAction onClick={copy} active={copied}>
               {copied ? "Tersalin" : "Salin"}
             </ShareAction>
-            <ShareAction onClick={share}>Bagikan</ShareAction>
+            <ShareAction onClick={sendToApp}>Bagikan</ShareAction>
             <ShareAction onClick={rotate} disabled={busy !== null}>
               {busy === "rotate" ? "Mengganti…" : "Ganti"}
             </ShareAction>
@@ -250,18 +278,51 @@ export default function ModeSuamiPage() {
           Yang tersimpan di server
         </h3>
         <p className="mt-1.5 mb-0 text-[12px]/[1.55] text-tx2">
-          Hanya satu hal: kode acak di tautan itu, dan satu kata — haid atau
-          suci. Tidak ada tanggal, catatan, riwayat, atau namamu. Catatan
-          harianmu tetap tidak pernah meninggalkan ponsel ini.
+          Statusmu dikunci dulu di ponsel ini sebelum dikirim. Yang sampai ke
+          server cuma tulisan acak yang <span className="font-semibold text-tx">tidak
+          bisa dibacanya</span> — kuncinya ada di bagian tautan setelah tanda{" "}
+          <code className="font-semibold text-tx">#</code>, dan bagian itu tidak
+          pernah dikirim peramban ke server mana pun. Yang bisa membukanya hanya
+          orang yang kamu beri tautannya.
         </p>
         <p className="mt-2 mb-0 text-[12px]/[1.55] text-tx2">
-          Tautannya berhenti sendiri setelah seminggu tanpa pembaruan, supaya
+          Tautannya berhenti sendiri setelah dua minggu tanpa pembaruan, supaya
           status lama tidak menggantung kalau kamu berhenti memakai Suci.
         </p>
       </section>
 
+      {/*
+        Honesty about where the encryption stops. Written out rather than
+        summarised as "aman", because the metadata point below is the one a
+        cycle tracker cannot wave away, and a user who is choosing whether to
+        share deserves it in plain language before she decides.
+      */}
+      <section className="rounded-2xl border border-stone-b bg-stone-card px-[15px] py-3.5">
+        <h3 className="m-0 text-[13px]/[1.3] font-semibold text-stone-tx">
+          Yang tetap tidak tersembunyi
+        </h3>
+        <ul className="mt-2 mb-0 flex list-none flex-col gap-2 p-0">
+          {[
+            "Isinya terkunci, tapi waktu setiap pembaruan tercatat di server. Pola kapan dan seberapa sering statusmu berubah masih bisa terlihat oleh penyedia servernya — dan pola itu sendiri menggambarkan siklus. Enkripsi tidak menutupi hal ini.",
+            "Siapa pun yang memegang tautan utuhnya bisa membaca statusmu, termasuk kalau tautan itu diteruskan ke orang lain. Yang menjaganya adalah kerahasiaan tautan itu, bukan kata sandi atau akun.",
+            "Mengubah atau menghapus statusmu tidak bisa dilakukan hanya dengan memegang tautan — itu perlu kunci tulis yang tidak pernah keluar dari ponsel ini.",
+            "Di ponsel penerima, kuncinya ikut tersimpan supaya tautannya bisa dibuka lagi. Halaman itu menyediakan tombol untuk menghapusnya.",
+          ].map((line) => (
+            <li
+              key={line}
+              className="flex gap-2 text-[11.5px]/[1.55] text-stone-tx2"
+            >
+              <span aria-hidden="true" className="text-stone-tx">
+                ·
+              </span>
+              <span>{line}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <div className="mt-auto pt-3 pb-5">
-        {token ? (
+        {share ? (
           <SecondaryButton onClick={disable} disabled={busy !== null}>
             {busy === "off" ? "Mematikan…" : "Matikan Mode Suami"}
           </SecondaryButton>

@@ -116,33 +116,118 @@ function fromBase64(b64: string): Uint8Array {
   return out;
 }
 
+/* =========================================================================
+   Sharing: a key the server never gets.
+   =========================================================================
+
+   Two separate keys, and the separation is the point.
+
+   The vault key above is derived from the PIN and belongs to one person. The
+   share key below is generated fresh from the CSPRNG for one share session and
+   is derived from nothing — not the PIN, not the vault key, not the shareId.
+   Deriving it from the master key would mean handing a reader something with a
+   mathematical relationship to everything else she owns; the whole design
+   rests on that relationship not existing.
+
+   The share key travels in the URL fragment, which browsers never put on the
+   wire — not in the request line, not in Referer. So the server that stores
+   the ciphertext is handed no way to read it, whatever it is later compelled
+   or tempted to do with what it holds.
+
+   What this does not hide is in `lib/share/payload.ts`, stated plainly,
+   because a claim of encryption that quietly leaves out the metadata is worse
+   than no claim at all.
+   ------------------------------------------------------------------------- */
+
+const SHARE_ID_BYTES = 18; // 24 base64url characters, no padding
+
+/** Matches `generateShareId`. */
+export const SHARE_ID_PATTERN = /^[A-Za-z0-9_-]{24}$/;
+/** Matches an exported 256-bit AES key. */
+export const SHARE_KEY_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+
 /**
- * A share token for husband mode: short, readable, unguessable.
+ * The name of a share session on the server.
  *
- * Drawn by rejection sampling rather than `byte % alphabet.length`. With a
- * 31-character alphabet, 256 is not a multiple of 31, so the modulo shortcut
- * makes the first eight letters about 3% more likely than the rest. The bias
- * is small, but this is the only thing standing between a guessed URL and
- * someone's cycle status, so it is drawn uniformly.
+ * Not a cryptographic secret — it is in the path, so the server sees it, and
+ * it protects nothing on its own. Its job is only to be unguessable enough
+ * that nobody enumerates the store. 144 bits of CSPRNG output does that with
+ * room to spare.
  */
-export function generateShareToken(): string {
-  const alphabet = "abcdefghjkmnpqrstuvwxyz23456789"; // no look-alikes
-  const LENGTH = 12;
-  // Largest multiple of the alphabet that fits in a byte; anything at or above
-  // it is discarded and redrawn.
-  const limit = Math.floor(256 / alphabet.length) * alphabet.length;
+export function generateShareId(): string {
+  return toBase64Url(crypto.getRandomValues(new Uint8Array(SHARE_ID_BYTES)));
+}
 
-  const chars: string[] = [];
-  while (chars.length < LENGTH) {
-    const batch = crypto.getRandomValues(new Uint8Array(LENGTH));
-    for (const b of batch) {
-      if (b >= limit) continue;
-      chars.push(alphabet[b % alphabet.length]);
-      if (chars.length === LENGTH) break;
-    }
+/** A fresh AES-256-GCM key for one share session. Extractable: it has to */
+/** leave, into the link fragment, or the reader could never decrypt. */
+export async function generateShareKey(): Promise<string> {
+  const key = await subtle().generateKey({ name: "AES-GCM", length: 256 }, true, [
+    "encrypt",
+    "decrypt",
+  ]);
+  const raw = await subtle().exportKey("raw", key);
+  return toBase64Url(new Uint8Array(raw));
+}
+
+async function importShareKey(keyB64: string): Promise<CryptoKey> {
+  return subtle().importKey(
+    "raw",
+    fromBase64Url(keyB64) as BufferSource,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"],
+  );
+}
+
+/** Ciphertext and its IV, which is all the server is ever given. */
+export interface SealedShare {
+  ct: string;
+  iv: string;
+}
+
+export async function sealWithShareKey(
+  plaintext: string,
+  keyB64: string,
+): Promise<SealedShare> {
+  // A fresh IV per encryption. Reusing one under the same key breaks GCM
+  // catastrophically — it leaks the XOR of the plaintexts and the auth key —
+  // and statuses are republished under one key many times over its life.
+  const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
+  const ciphertext = await subtle().encrypt(
+    { name: "AES-GCM", iv: iv as BufferSource },
+    await importShareKey(keyB64),
+    new TextEncoder().encode(plaintext),
+  );
+  return { ct: toBase64Url(new Uint8Array(ciphertext)), iv: toBase64Url(iv) };
+}
+
+/** Null when the key is wrong or the ciphertext was tampered with. */
+export async function openWithShareKey(
+  sealed: SealedShare,
+  keyB64: string,
+): Promise<string | null> {
+  try {
+    const plain = await subtle().decrypt(
+      { name: "AES-GCM", iv: fromBase64Url(sealed.iv) as BufferSource },
+      await importShareKey(keyB64),
+      fromBase64Url(sealed.ct) as BufferSource,
+    );
+    return new TextDecoder().decode(plain);
+  } catch {
+    return null;
   }
+}
 
-  return `${chars.slice(0, 4).join("")}-${chars.slice(4, 8).join("")}-${chars
-    .slice(8, 12)
-    .join("")}`;
+/** A write secret, so holding the link does not mean being able to change it. */
+export function generateShareSecret(): string {
+  return toBase64Url(crypto.getRandomValues(new Uint8Array(24)));
+}
+
+export function toBase64Url(bytes: Uint8Array): string {
+  return toBase64(bytes).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+export function fromBase64Url(s: string): Uint8Array {
+  const b64 = s.replace(/-/g, "+").replace(/_/g, "/");
+  return fromBase64(b64.padEnd(Math.ceil(b64.length / 4) * 4, "="));
 }

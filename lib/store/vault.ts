@@ -43,6 +43,10 @@ export const VAULT_KEY = "suci.vault";
 export const THEME_KEY = "suci.theme";
 /** Set when the user chooses "Nanti saja" instead of a PIN. */
 export const NO_PIN_KEY = "suci.nopin";
+/** A plaintext status mirror written by builds before the payload was sealed. */
+const LEGACY_SHARE_KEY = "suci.share";
+/** The reader-side key cache; cleared here too when a device is wiped. */
+const READER_KEY_CACHE = "suci.sharekeys";
 
 export function emptyVault(name = ""): VaultData {
   const now = new Date().toISOString();
@@ -147,10 +151,35 @@ function migrate(data: VaultData): VaultData {
             DEFAULT_LOCATION.tz,
         };
 
+  // Share links from before the payload was encrypted cannot be upgraded in
+  // place: their server rows hold a plaintext status under a token shape the
+  // new API will not write to. Turning sharing off locally and leaving that
+  // row live for the rest of its TTL would break the promise the screen makes
+  // — "matikan kapan saja, dan tautan lama langsung tidak berlaku" — so the
+  // old credentials are carried over as `legacyShare` and the app deletes the
+  // row on next load before dropping them.
+  const legacy = data.profile as unknown as {
+    shareToken?: string;
+    shareSecret?: string;
+  };
+  const carriedOver =
+    legacy?.shareToken && legacy?.shareSecret
+      ? { token: legacy.shareToken, secret: legacy.shareSecret }
+      : data.profile?.legacyShare;
+
+  const profile = {
+    ...emptyVault().profile,
+    ...data.profile,
+    location: withTz,
+    ...(carriedOver ? { legacyShare: carriedOver } : {}),
+  };
+  delete (profile as { shareToken?: string }).shareToken;
+  delete (profile as { shareSecret?: string }).shareSecret;
+
   return {
     ...emptyVault(),
     ...data,
-    profile: { ...emptyVault().profile, ...data.profile, location: withTz },
+    profile,
     qadhaFast: { ...emptyVault().qadhaFast, ...data.qadhaFast },
     amalan: data.amalan ?? {},
     ghuslSteps: data.ghuslSteps ?? {},
@@ -161,7 +190,8 @@ function migrate(data: VaultData): VaultData {
 export function destroyVault(): void {
   localStorage.removeItem(VAULT_KEY);
   localStorage.removeItem(NO_PIN_KEY);
-  localStorage.removeItem(SHARE_KEY);
+  localStorage.removeItem(LEGACY_SHARE_KEY);
+  localStorage.removeItem(READER_KEY_CACHE);
   localStorage.removeItem(ATTEMPTS_KEY);
 }
 
@@ -245,56 +275,20 @@ export function clearFailedUnlocks(): void {
 /* ---------------------------- husband mode ------------------------------- */
 
 /**
- * The share record.
+ * There is no local status record any more, and that is the change.
  *
- * The vault itself is sealed behind the PIN, so a page opened from a share
- * link cannot read it — correctly. Mode Suami therefore publishes a separate,
- * deliberately tiny record holding exactly what the design promises to share:
- * the token, today's status, and when it was written. No date range, no notes,
- * no history, nothing that could be used to reconstruct a cycle.
+ * Earlier builds mirrored today's status into `suci.share` in the clear, so
+ * that the owner's own browser could render her link offline. It was a
+ * plaintext "haid" sitting in localStorage outside the vault — readable by
+ * anyone holding the unlocked phone, which is precisely the threat the PIN
+ * exists for. The convenience was not worth it.
  *
- * Because it is unencrypted, nothing may be added to this shape without
- * re-reading what Mode Suami tells the user it shares.
+ * Everything sharing needs now lives in two places and no third: the session
+ * (id, key, write secret) inside the encrypted vault as `profile.share`, and
+ * the ciphertext on the server, which cannot be read without the key. The
+ * reader's own copy of the key is handled in `share-client.ts`, on the
+ * reader's device, and is disclosed to them there.
  */
-export const SHARE_KEY = "suci.share";
-
-export interface ShareRecord {
-  token: string;
-  /** "haid" | "suci" — the only two the shared page distinguishes. */
-  state: "haid" | "suci";
-  updatedAt: string;
-}
-
-export function publishShare(record: ShareRecord): void {
-  try {
-    localStorage.setItem(SHARE_KEY, JSON.stringify(record));
-  } catch {
-    // Blocked storage just means the link will read as expired.
-  }
-}
-
-export function readShare(): ShareRecord | null {
-  try {
-    const raw = localStorage.getItem(SHARE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as ShareRecord;
-    if (!parsed?.token || (parsed.state !== "haid" && parsed.state !== "suci")) {
-      return null;
-    }
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-export function clearShare(): void {
-  try {
-    localStorage.removeItem(SHARE_KEY);
-  } catch {
-    // Nothing to do; the token check will fail closed anyway.
-  }
-}
-
 /* ---------------------------- export ------------------------------------ */
 
 export function toExportJson(data: VaultData): string {

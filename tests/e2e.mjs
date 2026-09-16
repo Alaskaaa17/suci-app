@@ -270,17 +270,18 @@ await page.waitForTimeout(200);
 const nifasTab = await page.textContent("body");
 check("nifas tab shows 60 and 40", /60/.test(nifasTab) && /40/.test(nifasTab));
 
-/* ---- husband mode ---------------------------------------------------------- */
+/* ---- husband mode: the blind relay ----------------------------------------- */
 
 await go("/pengaturan/suami");
 if (await page.getByRole("button", { name: /Nyalakan Mode Suami/ }).count()) {
   await page.getByRole("button", { name: /Nyalakan Mode Suami/ }).click();
   await page.waitForSelector("text=Tautan aktif");
 }
-const link = await page.locator("code").textContent();
-check("share link generated", /\/s\/[a-z0-9-]+/.test(link));
+const link = (await page.locator("#tautan-aktif").textContent()).trim();
+check("share link generated", /\/s\/[A-Za-z0-9_-]{24}#k=[A-Za-z0-9_-]{43}$/.test(link), link);
 
-const token = link.split("/s/")[1];
+const shareId = link.split("/s/")[1].split("#")[0];
+const shareKey = link.split("#k=")[1];
 
 // Without KV provisioned the app must warn here, on the screen where the link
 // is handed over, rather than letting the reader discover it.
@@ -289,14 +290,61 @@ check(
   /Tautan belum bisa diandalkan/.test(await page.textContent("body")),
 );
 
-// The point of the share server: a completely separate browser, with no
-// vault, no localStorage and no service worker, must see the status.
+// ---- the guarantee -----------------------------------------------------------
+// What the server holds must be unreadable. This is the check the whole design
+// exists for: if it ever fails, every claim on the Mode Suami screen is false.
+const stored = await page.evaluate(async (id) => {
+  const res = await fetch(`/api/share/${id}`);
+  return { status: res.status, body: await res.text() };
+}, shareId);
+check("the server hands back an envelope", stored.status === 200, `HTTP ${stored.status}`);
+check(
+  "the stored row contains no readable status",
+  !/haid|suci|state/i.test(stored.body),
+  stored.body.slice(0, 120),
+);
+check(
+  "the stored row is only ciphertext, IV and a timestamp",
+  JSON.stringify(Object.keys(JSON.parse(stored.body)).sort()) ===
+    JSON.stringify(["ct", "iv", "updatedAt"]),
+  stored.body.slice(0, 120),
+);
+check(
+  "the key is not in the stored row",
+  !stored.body.includes(shareKey),
+);
+
+// The reader's device: no vault, no localStorage, no service worker. It must
+// still decrypt, because the key rides in the fragment.
 const reader = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const readerPage = await reader.newPage();
-await readerPage.goto(`${BASE}/s/${token}`, { waitUntil: "domcontentloaded" });
+
+// Every request the reader's browser makes, recorded, so we can prove the key
+// never leaves the device. A fragment is not transmitted by any browser — this
+// asserts nothing in our own code moves it somewhere that is.
+const readerRequests = [];
+readerPage.on("request", (r) => readerRequests.push({ url: r.url(), body: r.postData() ?? "" }));
+
+/**
+ * Always through a blank page first. Changing only the `#` of a URL is a
+ * same-document navigation, so `goto` would not reload and the assertions
+ * below would pass against whatever was already on screen — which is exactly
+ * how the first draft of these checks fooled itself.
+ */
+async function openReader(url) {
+  await readerPage.goto("about:blank");
+  await readerPage.goto(url, { waitUntil: "domcontentloaded" });
+}
+
+await openReader(link);
 await readerPage.waitForSelector("text=Hari ini dia", { timeout: 15000 });
 const shared = await readerPage.textContent("body");
-check("a different device sees the status", /Hari ini dia/.test(shared));
+check("a different device decrypts and sees the status", /Hari ini dia/.test(shared));
+check(
+  "the share key never appears in a request",
+  readerRequests.every((r) => !r.url.includes(shareKey) && !r.body.includes(shareKey)),
+  readerRequests.find((r) => r.url.includes(shareKey))?.url ?? "",
+);
 check(
   "the reader has no vault of their own",
   await readerPage.evaluate(() => localStorage.getItem("suci.vault") === null),
@@ -306,31 +354,56 @@ check(
   !/Aisyah/.test(shared) && !/Kram perut/.test(shared) && !/\d{4}-\d{2}-\d{2}/.test(shared),
 );
 
-// Holding the link must not confer the ability to change what it says.
-const forged = await readerPage.evaluate(async (t) => {
-  const res = await fetch("/api/share", {
-    method: "POST",
+// The fragment is dropped on a bookmark or a history entry; the remembered key
+// is what keeps the link working on a second visit.
+await openReader(`${BASE}/s/${shareId}`);
+await readerPage.waitForSelector("text=Hari ini dia", { timeout: 15000 });
+check("a second visit without the fragment still opens", true);
+
+// ...and the reader can take that back.
+await readerPage.getByRole("button", { name: /Lupakan tautan ini/ }).click();
+await readerPage.waitForSelector("text=Kunci dihapus", { timeout: 8000 });
+await openReader(`${BASE}/s/${shareId}`);
+await readerPage.waitForSelector("text=Tautannya belum lengkap", { timeout: 15000 });
+check("forgetting the key really forgets it", true);
+
+// A link whose key is wrong must say so, and must not fall back to anything.
+await openReader(`${BASE}/s/${shareId}#k=${"A".repeat(43)}`);
+await readerPage.waitForSelector("text=Kunci ini tidak cocok", { timeout: 15000 });
+check("a wrong key is refused, not guessed at", true);
+
+// Holding the link must not confer the ability to change or delete it. The
+// reader has the key, so they could produce valid ciphertext — the write
+// secret is the only thing in the way.
+const forged = await readerPage.evaluate(async (id) => {
+  const res = await fetch(`/api/share/${id}`, {
+    method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token: t, state: "suci", secret: "z".repeat(32) }),
+    body: JSON.stringify({ ct: "Rm9yZ2Vk", iv: "MTIzNDU2Nzg5MDEy", secret: "z".repeat(32) }),
   });
   return res.status;
-}, token);
+}, shareId);
 check("a reader cannot forge the status", forged === 403, `HTTP ${forged}`);
 
-await readerPage.goto(`${BASE}/s/tidak-valid-xxxx`, {
-  waitUntil: "domcontentloaded",
-});
+const forgedDelete = await readerPage.evaluate(async (id) => {
+  const res = await fetch(`/api/share/${id}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ secret: "z".repeat(32) }),
+  });
+  return res.status;
+}, shareId);
+check("a reader cannot delete the link", forgedDelete === 403, `HTTP ${forgedDelete}`);
+
+await openReader(`${BASE}/s/tidakvalidxxxxxxxxxxxxxx`);
 await readerPage.waitForSelector("text=Suci", { timeout: 15000 });
 await readerPage.waitForTimeout(600);
-check(
-  "bad token shows no status",
-  !/Hari ini dia/.test(await readerPage.textContent("body")),
-);
+const unknownCopy = await readerPage.textContent("body");
+check("bad shareId shows no status", !/Hari ini dia/.test(unknownCopy));
 
 // A link that cannot be resolved must never be reported as one the owner took
 // down. This suite runs without KV, so the server has no durable store and
 // says so — the one message it must not show is the accusation.
-const unknownCopy = await readerPage.textContent("body");
 check(
   "an unresolvable link does not blame the owner",
   !/tidak berlaku/.test(unknownCopy),
@@ -338,16 +411,14 @@ check(
 );
 check(
   "an unresolvable link says why",
-  /Belum bisa menampilkan status/.test(unknownCopy),
+  /Belum bisa menampilkan status|Tautannya belum lengkap/.test(unknownCopy),
 );
 
-// Turning Mode Suami off must kill the link for everyone, immediately. What
-// matters is that the status stops being shown, whatever the server can work
-// out about the reason.
+// Turning Mode Suami off must kill the link for everyone, immediately.
 await go("/pengaturan/suami");
 await page.getByRole("button", { name: /Matikan Mode Suami/ }).click();
 await page.waitForTimeout(900);
-await readerPage.goto(`${BASE}/s/${token}`, { waitUntil: "domcontentloaded" });
+await openReader(link);
 await readerPage.waitForTimeout(900);
 check(
   "revoking kills the link on the other device",
@@ -360,6 +431,18 @@ await reader.close();
 await go("/pengaturan/suami");
 await page.getByRole("button", { name: /Nyalakan Mode Suami/ }).click();
 await page.waitForSelector("text=Tautan aktif");
+
+// The honesty note is part of the feature, not decoration: encryption does
+// nothing about write timing, and the screen must say so before she shares.
+const suamiCopy = await page.textContent("body");
+check(
+  "Mode Suami discloses the metadata that encryption does not hide",
+  /waktu setiap pembaruan tercatat/.test(suamiCopy),
+);
+check(
+  "Mode Suami says the server cannot read the status",
+  /tidak\s+bisa dibacanya/.test(suamiCopy.replace(/\s+/g, " ")),
+);
 
 /* ---- deletion requires the typed word --------------------------------------- */
 
@@ -673,12 +756,12 @@ check(
   "the keypad is disabled while locked out",
   await page.getByRole("button", { name: "1", exact: true }).isDisabled(),
 );
-const stored = await page.evaluate(() =>
+const attempts = await page.evaluate(() =>
   JSON.parse(localStorage.getItem("suci.attempts") ?? "null"),
 );
 check(
   "the lockout survives a reload",
-  stored?.lockedUntil > Date.now(),
+  attempts?.lockedUntil > Date.now(),
 );
 
 await browser.close();

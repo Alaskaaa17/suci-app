@@ -151,6 +151,16 @@ export function ChevronDownIcon({ strokeWidth = 1.8, ...rest }: IconProps) {
   );
 }
 
+/** A pull, not a push: the reader asks, nothing arrives on its own. */
+export function RefreshIcon({ strokeWidth = 1.8, ...rest }: IconProps) {
+  return (
+    <Svg strokeWidth={strokeWidth} {...rest}>
+      <path d="M20 11a8 8 0 1 0-.6 4" />
+      <path d="M20 5v6h-6" />
+    </Svg>
+  );
+}
+
 export function HomeIcon({ strokeWidth = 1.7, ...rest }: IconProps) {
   return (
     <Svg strokeWidth={strokeWidth} {...rest}>

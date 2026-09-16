@@ -1,35 +1,37 @@
-import type { ShareState } from "@/lib/server/share";
-import { readShare, type ShareRecord } from "./vault";
+import {
+  openWithShareKey,
+  sealWithShareKey,
+  SHARE_ID_PATTERN,
+  SHARE_KEY_PATTERN,
+  type SealedShare,
+} from "./crypto";
+import {
+  decodePayload,
+  encodePayload,
+  type SharePayload,
+  type ShareState,
+} from "@/lib/share/payload";
 
 /**
- * Talking to the share endpoint.
+ * Talking to the relay.
  *
- * The local record in `vault.ts` is still written on every change and is what
- * the share page falls back to when the network is gone on the owner's own
- * device. The server copy is what makes the link work on anyone else's.
+ * Everything here encrypts before it sends and decrypts after it receives, so
+ * that the only thing crossing the network is a blob neither the network nor
+ * the server can read. The share key is a function argument in this file and
+ * never a URL component — `fetch` paths are built from the shareId alone, so
+ * there is no path by which the key reaches a request line, a log or a Referer
+ * header.
  */
 
 export interface ShareCredentials {
-  token: string;
-  /** Never leaves this device; proves a write comes from the owner. */
+  /** Public-ish: the server sees it, it is in the path. */
+  id: string;
+  /** Never leaves the device except in the link fragment. */
+  key: string;
+  /** Never leaves the device at all. Proves a write comes from the owner. */
   secret: string;
 }
 
-/** A write secret long enough that guessing it is not a strategy. */
-export function generateShareSecret(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(24));
-  return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-/**
- * Whether this deployment can actually keep a share status.
- *
- * "memory" means the server accepted the write into an in-process map. On
- * serverless that map is per-instance, so the reader's request very likely
- * lands somewhere that has never heard of the token. The write "succeeded" and
- * the link still will not work — which is exactly the failure that used to be
- * reported to the reader as if the owner had revoked it.
- */
 export type ShareStorage = "redis" | "edge-config" | "memory" | "unknown";
 
 export interface PublishResult {
@@ -37,15 +39,25 @@ export interface PublishResult {
   storage: ShareStorage;
 }
 
+/** The link the sender copies. The key is after the `#`, which is the point. */
+export function shareUrl(origin: string, id: string, key: string): string {
+  return `${origin}/s/${id}#k=${key}`;
+}
+
+function endpoint(id: string): string {
+  return `/api/share/${encodeURIComponent(id)}`;
+}
+
 export async function publishShare(
   credentials: ShareCredentials,
-  state: ShareState,
+  payload: SharePayload,
 ): Promise<PublishResult> {
   try {
-    const res = await fetch("/api/share", {
-      method: "POST",
+    const sealed = await sealWithShareKey(encodePayload(payload), credentials.key);
+    const res = await fetch(endpoint(credentials.id), {
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...credentials, state }),
+      body: JSON.stringify({ ...sealed, secret: credentials.secret }),
     });
     if (!res.ok) return { ok: false, storage: "unknown" };
     const body = (await res.json().catch(() => ({}))) as {
@@ -53,9 +65,23 @@ export async function publishShare(
     };
     return { ok: true, storage: body.storage ?? "unknown" };
   } catch {
-    // Offline. The local record is still current, and the next status change
-    // or app open will republish.
+    // Offline. The next status change or app open republishes.
     return { ok: false, storage: "unknown" };
+  }
+}
+
+export async function revokeShare(
+  credentials: Pick<ShareCredentials, "id" | "secret">,
+): Promise<boolean> {
+  try {
+    const res = await fetch(endpoint(credentials.id), {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ secret: credentials.secret }),
+    });
+    return res.ok;
+  } catch {
+    return false;
   }
 }
 
@@ -71,54 +97,104 @@ export async function fetchShareStorage(): Promise<ShareStorage> {
   }
 }
 
-export async function revokeShare(
-  credentials: ShareCredentials,
-): Promise<boolean> {
-  try {
-    const res = await fetch("/api/share", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(credentials),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
+/* ----------------------------- the reader --------------------------------- */
 
 export type SharePageResult =
-  | { status: "ok"; state: ShareState; updatedAt: string; source: "server" | "device" }
+  | { status: "ok"; payload: SharePayload; storedAt: string }
+  /** No key in the fragment and none remembered. Nothing to try. */
+  | { status: "no-key" }
+  /** Ciphertext arrived but this key does not open it. */
+  | { status: "wrong-key" }
+  /** Decrypted, but the shape is from a version this build does not know. */
+  | { status: "unreadable" }
   /** The owner revoked or rotated the link, or it expired. Their doing. */
   | { status: "gone" }
-  /** The server is up but has nowhere to keep statuses. Not the owner's doing. */
+  /** The server is up but has nowhere to keep sessions. Not the owner's doing. */
   | { status: "unavailable" }
   /** This device cannot reach the server right now. */
   | { status: "offline" };
 
 /**
- * What the share page shows. Tries the server first, because that is the copy
- * that is authoritative for everyone. Falls back to the device's own record
- * only when the token matches — which means the owner is looking at their own
- * link offline, not that a reader is being shown stale data.
+ * Where the reader's key is remembered.
+ *
+ * The fragment is not always there on a second visit — a bookmark, a reload
+ * from history, a share sheet that strips it — and without the key the page
+ * has ciphertext and nothing else. So it is cached per shareId on the reader's
+ * own device.
+ *
+ * That is a real tradeoff and worth naming: it puts a decryption key in the
+ * reader's localStorage, where anyone with that unlocked device can find it.
+ * It is the reader's device and the reader is the intended audience, so this
+ * grants nobody access they did not already have through the link itself —
+ * but it does mean "close the tab" is not the same as "forget". The reader's
+ * page says so and offers a way to clear it.
  */
-export async function fetchSharedStatus(
-  token: string,
-): Promise<SharePageResult> {
+const KEY_CACHE = "suci.sharekeys";
+
+type KeyCache = Record<string, string>;
+
+function readCache(): KeyCache {
   try {
-    const res = await fetch(`/api/share/${encodeURIComponent(token)}`, {
-      cache: "no-store",
-    });
+    const raw = localStorage.getItem(KEY_CACHE);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as KeyCache;
+    return typeof parsed === "object" && parsed !== null ? parsed : {};
+  } catch {
+    return {};
+  }
+}
 
-    if (res.ok) {
-      const body = (await res.json()) as ShareRecord;
-      return {
-        status: "ok",
-        state: body.state,
-        updatedAt: body.updatedAt,
-        source: "server",
-      };
-    }
+export function rememberShareKey(id: string, key: string): void {
+  if (!SHARE_ID_PATTERN.test(id) || !SHARE_KEY_PATTERN.test(key)) return;
+  try {
+    localStorage.setItem(KEY_CACHE, JSON.stringify({ ...readCache(), [id]: key }));
+  } catch {
+    // Blocked storage only costs the reader the convenience of a bookmark.
+  }
+}
 
+export function recallShareKey(id: string): string | null {
+  const hit = readCache()[id];
+  return hit && SHARE_KEY_PATTERN.test(hit) ? hit : null;
+}
+
+export function forgetShareKeys(): void {
+  try {
+    localStorage.removeItem(KEY_CACHE);
+  } catch {
+    // Nothing to do; the page already says it may not have worked.
+  }
+}
+
+/**
+ * The key from `#k=...`, if this page was opened with one.
+ *
+ * Read from `location.hash` and never written anywhere that could send it. A
+ * fragment is not transmitted by any browser — not on navigation, not on
+ * fetch, not in Referer — which is the single mechanism the whole design rests
+ * on, so nothing in this codebase may move it into a path or a query.
+ */
+export function keyFromFragment(): string | null {
+  if (typeof window === "undefined") return null;
+  const hash = window.location.hash.replace(/^#/, "");
+  const found = new URLSearchParams(hash).get("k");
+  return found && SHARE_KEY_PATTERN.test(found) ? found : null;
+}
+
+export async function fetchSharedStatus(
+  id: string,
+  key: string | null,
+): Promise<SharePageResult> {
+  if (!key) return { status: "no-key" };
+
+  let res: Response;
+  try {
+    res = await fetch(endpoint(id), { cache: "no-store" });
+  } catch {
+    return { status: "offline" };
+  }
+
+  if (!res.ok) {
     // A 404 that is not our JSON is Next's own "page not found" — the route
     // does not exist in this build. That is a deployment that has not caught
     // up, not a link the owner took down, and saying "tautan tidak berlaku"
@@ -126,39 +202,21 @@ export async function fetchSharedStatus(
     const isOurApi = (res.headers.get("content-type") ?? "").includes(
       "application/json",
     );
-
-    if (res.status === 404 && isOurApi) return onlyDeviceCopy(token, "gone");
-    if (res.status === 404) return onlyDeviceCopy(token, "unavailable");
-    if (res.status === 503) return onlyDeviceCopy(token, "unavailable");
-    return onlyDeviceCopy(token, "offline");
-  } catch {
-    return onlyDeviceCopy(token, "offline");
+    if (res.status === 404 && isOurApi) return { status: "gone" };
+    if (res.status === 404 || res.status === 503) return { status: "unavailable" };
+    return { status: "offline" };
   }
+
+  const envelope = (await res.json()) as SealedShare & { updatedAt: string };
+  const plaintext = await openWithShareKey(envelope, key);
+  // AES-GCM authenticates, so this is "wrong key or tampered ciphertext",
+  // never "decrypted to something plausible but wrong".
+  if (plaintext === null) return { status: "wrong-key" };
+
+  const payload = decodePayload(plaintext);
+  if (!payload) return { status: "unreadable" };
+
+  return { status: "ok", payload, storedAt: envelope.updatedAt };
 }
 
-/**
- * When the server cannot answer, the one case where showing something is still
- * honest is the owner on her own device: the local record is hers and current.
- * For anybody else there is nothing to fall back to, and the reason is shown
- * instead.
- *
- * A revoked link deliberately does not fall back — the owner turning sharing
- * off must stop showing a status even on the phone that wrote it.
- */
-function onlyDeviceCopy(
-  token: string,
-  reason: "gone" | "unavailable" | "offline",
-): SharePageResult {
-  if (reason !== "gone") {
-    const local = readShare();
-    if (local && local.token === token) {
-      return {
-        status: "ok",
-        state: local.state,
-        updatedAt: local.updatedAt,
-        source: "device",
-      };
-    }
-  }
-  return { status: reason };
-}
+export type { ShareState, SharePayload };

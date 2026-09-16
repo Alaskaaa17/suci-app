@@ -19,19 +19,19 @@ import {
   type Profile,
   type Verdict,
 } from "@/lib/fiqh/types";
-import { publishShare as publishToServer } from "./share-client";
+import {
+  publishShare as publishToServer,
+  revokeShare,
+} from "./share-client";
 import {
   blankEntry,
   clearFailedUnlocks,
-  clearShare,
   destroyVault,
   emptyVault,
   entryList,
   loadVault,
   lockoutRemaining,
   NO_PIN_KEY,
-  publishShare,
-  readShare,
   recordFailedUnlock,
   saveVault,
   vaultExists,
@@ -251,19 +251,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
    * Keep the shared status in step with the live ruling, so "diperbarui
    * otomatis" on the shared page is true.
    *
-   * Written twice: to the device, which is what the owner's own browser falls
-   * back to offline, and to the server, which is what makes the link work on
-   * anyone else's phone. Turning Mode Suami off — or erasing the vault —
-   * removes both.
+   * The payload is sealed with the share key before it leaves, so what reaches
+   * the server is ciphertext it has no way to open. Nothing is mirrored
+   * locally in the clear any more — see the note in `vault.ts`.
    */
-  const token = data?.profile.shareToken;
-  const secret = data?.profile.shareSecret;
+  const share = data?.profile.share;
+  const shareId = share?.id;
+  const shareKey = share?.key;
+  const shareSecret = share?.secret;
+  const lastState = share?.lastState;
+  const lastPublishedAt = share?.lastPublishedAt;
 
   useEffect(() => {
-    if (!token || !verdict) {
-      if (!token) clearShare();
-      return;
-    }
+    if (!shareId || !shareKey || !shareSecret || !verdict) return;
 
     const exempt =
       verdict.classification === Classification.HAID ||
@@ -273,16 +273,45 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // `verdict` is rebuilt on every change to the vault, so publishing
     // unconditionally meant a server write on every app open and every edited
     // entry — hundreds of writes to say the same word. Harmless against Redis,
-    // and enough to exhaust an Edge Config write budget on its own.
-    //
-    // A write is warranted when the bit actually changed, when the link is new,
-    // or when the record is old enough to be worth refreshing before its
-    // seven-day expiry. The local record is the log of what was last sent.
-    if (!needsPublishing(token, state)) return;
+    // and enough to exhaust an Edge Config write budget on its own. It also
+    // mattered more than it looks: every write is a timestamp the server
+    // operator can see, and a chatty client draws a more detailed picture of
+    // her day than a quiet one, even with the contents sealed.
+    if (!needsPublishing(state, lastState, lastPublishedAt)) return;
 
-    publishShare({ token, state, updatedAt: new Date().toISOString() });
-    if (secret) void publishToServer({ token, secret }, state);
-  }, [token, secret, verdict]);
+    const publishedAt = new Date().toISOString();
+    void publishToServer(
+      { id: shareId, key: shareKey, secret: shareSecret },
+      { v: 1, state, updatedAt: publishedAt },
+    ).then((result) => {
+      if (!result.ok) return;
+      void update((draft) => {
+        if (draft.profile.share?.id !== shareId) return;
+        draft.profile.share.lastState = state;
+        draft.profile.share.lastPublishedAt = publishedAt;
+      });
+    });
+  }, [shareId, shareKey, shareSecret, lastState, lastPublishedAt, verdict, update]);
+
+  /**
+   * A share link created before the payload was encrypted. Its row still holds
+   * a plaintext status under a shareId the new API will not write to, so the
+   * only thing to do with it is delete it — quietly, once, on the first load
+   * after the upgrade. Leaving it to expire would mean the app says sharing is
+   * off while a live URL still answers.
+   */
+  const legacyShare = data?.profile.legacyShare;
+  useEffect(() => {
+    if (!legacyShare) return;
+    void revokeShare({
+      id: legacyShare.token,
+      secret: legacyShare.secret,
+    }).then(() => {
+      void update((draft) => {
+        delete draft.profile.legacyShare;
+      });
+    });
+  }, [legacyShare, update]);
 
   const verdictFor = useCallback(
     (date: IsoDate) => {
@@ -374,23 +403,18 @@ export function useApp(): AppState {
 
 /**
  * Half the expiry window. Refresh well before a reader would see the link go
- * quiet, without turning "still suci" into a write every time the app opens.
+ * quiet, without turning "still suci" into a write — and a timestamp the
+ * server can see — every time the app opens.
  */
-const REFRESH_AFTER_MS = 3.5 * 24 * 60 * 60 * 1000;
+const REFRESH_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
 
-function needsPublishing(token: string, state: "haid" | "suci"): boolean {
-  const last = readShare();
-  if (!last || last.token !== token) return true; // new or rotated link
-  if (last.state !== state) return true; // the bit actually changed
-  const age = Date.now() - new Date(last.updatedAt).getTime();
+function needsPublishing(
+  state: "haid" | "suci",
+  lastState: "haid" | "suci" | undefined,
+  lastPublishedAt: string | undefined,
+): boolean {
+  if (!lastState || !lastPublishedAt) return true; // new or rotated link
+  if (lastState !== state) return true; // the bit actually changed
+  const age = Date.now() - new Date(lastPublishedAt).getTime();
   return !(age >= 0 && age < REFRESH_AFTER_MS);
-}
-
-/**
- * For screens that cannot render without a vault. Returns the loaded data or
- * null; the shell handles the loading/locked/onboarding cases above them, so
- * a null here means "still booting", not "broken".
- */
-export function useVault(): VaultData | null {
-  return useApp().data;
 }

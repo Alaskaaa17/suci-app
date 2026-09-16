@@ -28,7 +28,7 @@ what it models it says so and points the user to a person, rather than guessing.
 ```bash
 npm install
 npm run dev          # http://localhost:3000
-npm test             # engine, prayer times, storage, share API (79)
+npm test             # engine, prayer times, crypto, storage, share API (100)
 npm run typecheck
 npm run build
 
@@ -37,7 +37,7 @@ npm run test:all        # typecheck + lint + unit + contrast
 
 # end-to-end, against a running production build
 npm run build && npm start &
-npm run test:e2e        # 90 checks: flows, offline, security, a11y
+npm run test:e2e        # 101 checks: flows, offline, security, a11y
 ```
 
 Full-bleed on a phone; on a wide screen it renders inside the 390×844 frame from
@@ -65,8 +65,8 @@ Edge Config is a config store being used as a database. It works, and the
 compromises are real:
 
 - **`VERCEL_API_TOKEN` is not scoped to the Edge Config.** Vercel tokens reach
-  an account or a team, so the secret guarding one bit is worth far more than
-  the bit. This is the strongest argument for Upstash, and it is a deployment
+  an account or a team, so the secret guarding one status is worth far more
+  than the status. This is the strongest argument for Upstash, and it is a deployment
   decision rather than a code one.
 - **No TTL.** Expiry rides inside each value and is enforced on read; expired
   keys are swept on the next write. The promise that a stale "suci" cannot
@@ -115,7 +115,9 @@ no signal at all.
 app/                  one route per screen, grouped by the design's four flows
 components/           the design system: primitives, icons, phone shell
 lib/fiqh/             the domain — rules, cycle engine, verdicts, prayer times
-lib/store/            encrypted local vault and the React store over it
+lib/store/            encrypted local vault, share crypto, the React store
+lib/share/            what may travel inside a share link, and what it cannot hide
+lib/server/           the blind relay — storage adapter and the share row
 lib/content/          glossary, FAQ, substitute deeds
 public/sw.js          service worker — offline shell and asset caching
 tests/e2e.mjs         end-to-end checks against a production build
@@ -224,28 +226,76 @@ says so rather than implying protection that is not there.
 Threat model: a shared or borrowed phone. Browser storage has no secure enclave,
 so this does not defend against code execution on an unlocked device.
 
-### Husband mode
+### Husband mode: a relay that cannot read
 
-This is the only reason Suci has a server at all, and it stores exactly one bit
-per link: whether the person is, today, haid or suci. No dates, no symptoms, no
-notes, no history, no name. A status that flips every few days carries almost
-nothing on its own; a status with a date attached is a cycle, which is the
-thing the user chose not to share.
+This is the only reason Suci has a server at all, and **the server cannot read
+what it stores.** Each share session is one row of AES-256-GCM ciphertext plus
+its IV. The key is generated on the sender's device and travels in the URL
+fragment, which no browser transmits — not in the request line, not in
+`Referer`, not on a `fetch`. The relay is handed something it has no way to
+open, whatever it is later tempted or compelled to do with what it holds.
 
-`lib/server/share.ts` is responsible for three properties:
+```
+https://domain/s/<shareId>#k=<shareKey>
+                 └── path: the server sees this
+                              └── fragment: it never leaves the device
+```
 
-- **Holding the link does not let you write.** The token travels in a URL and
-  will be forwarded and screenshotted. Writing needs a second secret that never
-  leaves the owner's device, stored only as a hash, so neither a reader nor a
-  database dump can forge a status.
-- **A status cannot linger.** Records expire after a week. Someone who stops
-  using the app should not leave a stale "suci" standing for a reader to act
-  on — the link goes quiet and says so.
+Two keys, and the separation is the design:
+
+| | `lib/store/crypto.ts` | derived from | lives in |
+|---|---|---|---|
+| **vault key** | PBKDF2-SHA-256, 310k, non-extractable | her PIN | memory, while unlocked |
+| **share key** | `generateShareKey()`, fresh CSPRNG, extractable | **nothing** | the vault, and the link fragment |
+
+`generateShareKey` takes no arguments, which is asserted in the tests, because
+a key derived from the master key would make handing someone a link a foothold
+into everything else she owns. It is not one.
+
+`lib/server/share.ts` is responsible for four properties:
+
+- **Nothing legible may be in the row.** Not the state, not a label, not a
+  "type" field that happens to say `haid`. The moment one plaintext field is
+  convenient the guarantee is gone and every screen claiming it becomes a lie.
+  The e2e suite reads the stored row back and greps it.
+- **Holding the link does not let you write.** The shareId travels in a URL and
+  will be forwarded and screenshotted — and the key rides beside it, so a
+  reader could otherwise encrypt a valid-looking status and overwrite hers, or
+  just delete the row. Writing needs a third secret that never enters the link,
+  stored only as a hash.
+- **A status cannot linger.** Rows expire after a fortnight.
 - **Revocation is immediate.** Turning Mode Suami off, or rotating the link,
-  deletes the record. The old URL stops resolving at once.
+  deletes the row. Rotating also mints a new key, so the old one is useless
+  against the new ciphertext rather than merely pointing somewhere else.
 
-The rest of the app is untouched by this: entries, rulings and the vault never
-cross the network, and Pengaturan now says so in those words.
+#### What encryption does not hide
+
+Stated on the Mode Suami screen too, because a claim of encryption that quietly
+omits this is worse than no claim:
+
+- **Write timing.** The row carries when it was written, and the operator sees
+  every request. For a cycle tracker the rhythm of writes *is* the sensitive
+  fact — a status that flips every few weeks draws the cycle in timestamps with
+  every byte of content opaque. Encryption does nothing about this. It is the
+  reason the client publishes only on a real change or past half the TTL: a
+  chatty client draws a more detailed picture than a quiet one.
+- **Ciphertext size.** Visible. The payload is fixed-shape and both states
+  encode to the same length, asserted in `lib/store/crypto.test.ts`, so it
+  leaks nothing — which is a reason to keep it fixed-shape.
+- **Who asked.** The reader's IP and user agent reach the server like any
+  request.
+- **Anyone holding the full link can read it**, including whoever it gets
+  forwarded to. Security rests on the secrecy of the link, not on accounts.
+- **The reader's device remembers the key**, so a bookmark still works. That
+  is a decryption key in their localStorage; the reader's page says so and
+  offers a button to clear it.
+
+The payload itself is guarded in `lib/share/payload.ts`. Encryption protects it
+from the operator, not from the person holding the link — so "the server cannot
+see it" is not an argument for putting more in it.
+
+The rest of the app is untouched: entries, rulings and the vault never cross
+the network at all.
 
 #### Provisioning
 

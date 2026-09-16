@@ -249,7 +249,7 @@ export default function PengaturanPage() {
           icon={<LinkIcon size={16} />}
           title="Mode Suami"
           subtitle={
-            profile.shareToken ? "Tautan aktif" : "Tidak ada tautan aktif"
+            profile.share ? "Tautan aktif" : "Tidak ada tautan aktif"
           }
         />
         <NavRow
@@ -280,9 +280,10 @@ export default function PengaturanPage() {
           </span>
           <span className="mt-0.5 block text-[11.5px]/[1.45] text-tx2">
             Semuanya dihitung dan disimpan di ponsel ini. Satu-satunya hal yang
-            pernah keluar adalah status hari ini — haid atau suci — dan hanya
-            kalau kamu menyalakan Mode Suami. Untuk pindah perangkat, bawa
-            datamu lewat Data Saya.
+            pernah keluar adalah status hari ini — haid atau suci — hanya kalau
+            kamu menyalakan Mode Suami, dan itupun sudah terkunci sebelum
+            dikirim sehingga servernya sendiri tidak bisa membacanya. Untuk
+            pindah perangkat, bawa datamu lewat Data Saya.
           </span>
         </span>
       </div>

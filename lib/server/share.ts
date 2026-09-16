@@ -2,68 +2,112 @@ import { kvDelete, kvGet, kvIncrementWindow, kvSet } from "./store";
 
 /**
  * ============================================================================
- *  THE ONLY THING SUCI EVER STORES ON A SERVER.
+ *  THE ONLY THING SUCI EVER STORES ON A SERVER — AND IT CANNOT READ IT.
  * ============================================================================
  *
- *  One bit per share link: whether the person is, today, haid or suci. That is
- *  precisely what Mode Suami tells the user it shares — "bagikan satu hal saja"
- *  — and it is the whole reason a server exists in this app at all.
+ *  One row per share link: a blob of AES-256-GCM ciphertext, the IV it was
+ *  encrypted with, and when it was written. The key is never here. It is
+ *  generated on the sender's device, carried in the URL fragment, and browsers
+ *  do not put fragments on the wire — not in the request line, not in Referer.
+ *  So this file, and whoever runs the machine it executes on, holds something
+ *  it has no way to open.
  *
- *  Nothing may be added to `ShareRecord` without changing what Mode Suami
- *  promises on screen. No dates, no symptoms, no notes, no history, no
- *  prediction, no name, no identifier that outlives the token. A status that
- *  flips every few days carries almost nothing on its own; a status with a
- *  date attached is a cycle, which is the thing the user chose not to share.
+ *  That is the property to protect. Everything below exists to keep it, or to
+ *  be honest about where it stops:
  *
- *  Three properties this file is responsible for:
+ *   1. **Nothing readable may be added to the row.** Not the state, not a
+ *      label, not a hint, not a "type" field that happens to say "haid". The
+ *      moment one plaintext field is convenient, the guarantee is gone and
+ *      every screen that claims it becomes a lie. `StoredRecord` is the whole
+ *      surface; read it before extending it.
  *
- *   1. **Holding the link does not let you write.** The token is in a URL and
- *      will be forwarded, screenshotted and pasted. Writing requires a second
- *      secret that never leaves the owner's device, so a reader cannot forge
- *      a status. Only a hash of it is stored, so a dump of the database does
- *      not confer write access either.
+ *   2. **Holding the link does not let you write.** The shareId is in a URL
+ *      and will be forwarded, screenshotted and pasted, and the key rides
+ *      beside it — so a reader could otherwise encrypt a valid-looking status
+ *      and overwrite hers, or simply delete the row. Writing needs a second
+ *      secret that stays in her vault and never enters the link. Only its hash
+ *      is stored, so a dump of this database does not confer write access
+ *      either.
  *
- *   2. **A status cannot linger.** Records expire. Someone who stops using the
- *      app should not leave a stale "suci" standing indefinitely for a reader
- *      to act on — the link goes quiet instead, and says so.
+ *   3. **A status cannot linger.** Rows expire. Someone who stops using the
+ *      app should not leave a stale "suci" standing for a reader to act on.
  *
- *   3. **Revocation is immediate.** Turning Mode Suami off, or rotating the
- *      link, deletes the record. The old URL stops resolving at once, which is
- *      exactly what the screen promises.
+ *   4. **Revocation is immediate.** Turning Mode Suami off, or rotating the
+ *      link, deletes the row. The old URL stops resolving at once.
+ *
+ *  What this does NOT protect, which `lib/share/payload.ts` states in full and
+ *  the Mode Suami screen repeats to the user: the write timestamps are
+ *  visible, and for a cycle tracker the rhythm of writes is itself the
+ *  sensitive fact. Encryption does nothing about that.
  */
 
-export type ShareState = "haid" | "suci";
-
-export interface ShareRecord {
-  state: ShareState;
+/** The envelope. Opaque by construction — see property 1 above. */
+export interface ShareEnvelope {
+  /** AES-256-GCM ciphertext, base64url. */
+  ct: string;
+  /** The IV it was sealed with, base64url. Public by design; never reused. */
+  iv: string;
+  /** When the server wrote this row. Not part of the encrypted payload. */
   updatedAt: string;
 }
 
-interface StoredRecord extends ShareRecord {
+interface StoredRecord extends ShareEnvelope {
   /** SHA-256 of the write secret. Never the secret itself. */
   secretHash: string;
 }
 
 /**
- * Seven days. Long enough that someone who logs weekly does not keep dropping
- * offline, short enough that an abandoned link goes quiet within a week rather
- * than showing a year-old status forever.
+ * Fourteen days. Long enough that someone who logs every week or two does not
+ * keep dropping offline, short enough that an abandoned link goes quiet rather
+ * than showing a months-old status forever.
  */
-export const SHARE_TTL_SECONDS = 7 * 24 * 60 * 60;
+export const SHARE_TTL_SECONDS = 14 * 24 * 60 * 60;
 
-/** Matches `generateShareToken`: three groups of four, from a 31-char set. */
-const TOKEN_PATTERN = /^[a-hj-km-np-z2-9]{4}-[a-hj-km-np-z2-9]{4}-[a-hj-km-np-z2-9]{4}$/;
+/** Matches `generateShareId`: 18 random bytes as 24 base64url characters. */
+const ID_PATTERN = /^[A-Za-z0-9_-]{24}$/;
 
-export function isValidToken(token: unknown): token is string {
-  return typeof token === "string" && TOKEN_PATTERN.test(token);
+/**
+ * The shape share links had before the payload was encrypted. Accepted only
+ * for deletion, so that upgrading does not silently orphan a live row on the
+ * server while the app tells its owner sharing is off. Removable once no
+ * pre-encryption row can still be within its TTL.
+ */
+const LEGACY_ID_PATTERN =
+  /^[a-hj-km-np-z2-9]{4}-[a-hj-km-np-z2-9]{4}-[a-hj-km-np-z2-9]{4}$/;
+
+export function isValidShareId(id: unknown): id is string {
+  return typeof id === "string" && ID_PATTERN.test(id);
 }
 
-export function isValidState(state: unknown): state is ShareState {
-  return state === "haid" || state === "suci";
+function isDeletableId(id: unknown): id is string {
+  return (
+    typeof id === "string" && (ID_PATTERN.test(id) || LEGACY_ID_PATTERN.test(id))
+  );
 }
 
-function key(token: string): string {
-  return `share:${token}`;
+/** base64url, and long enough that the length alone tells us nothing useful. */
+function isEnvelopeField(value: unknown, max: number): value is string {
+  return (
+    typeof value === "string" &&
+    value.length > 0 &&
+    value.length <= max &&
+    /^[A-Za-z0-9_-]+$/.test(value)
+  );
+}
+
+/** 16 bytes as base64url. Anything else is not an AES-GCM IV. */
+function isIv(value: unknown): value is string {
+  return typeof value === "string" && /^[A-Za-z0-9_-]{16}$/.test(value);
+}
+
+/**
+ * A ceiling on the ciphertext, so the store cannot be used as free hosting for
+ * something that is not a status. The real payload is well under 200 bytes.
+ */
+const MAX_CIPHERTEXT_CHARS = 1024;
+
+function key(id: string): string {
+  return `share:${id}`;
 }
 
 async function hash(secret: string): Promise<string> {
@@ -83,16 +127,18 @@ function equals(a: string, b: string): boolean {
 }
 
 export async function readShareRecord(
-  token: string,
-): Promise<ShareRecord | null> {
-  if (!isValidToken(token)) return null;
-  const raw = await kvGet(key(token));
+  id: string,
+): Promise<ShareEnvelope | null> {
+  if (!isValidShareId(id)) return null;
+  const raw = await kvGet(key(id));
   if (!raw) return null;
   try {
     const stored = JSON.parse(raw) as StoredRecord;
-    if (!isValidState(stored.state)) return null;
-    // The hash stays on the server; a reader only ever sees the bit.
-    return { state: stored.state, updatedAt: stored.updatedAt };
+    if (!isEnvelopeField(stored.ct, MAX_CIPHERTEXT_CHARS) || !isIv(stored.iv)) {
+      return null;
+    }
+    // The hash stays here; a reader only ever receives the sealed envelope.
+    return { ct: stored.ct, iv: stored.iv, updatedAt: stored.updatedAt };
   } catch {
     return null;
   }
@@ -103,11 +149,15 @@ export type WriteResult =
   | { ok: false; reason: "invalid" | "forbidden" };
 
 export async function writeShareRecord(
-  token: string,
-  state: ShareState,
+  id: string,
+  envelope: { ct: unknown; iv: unknown },
   secret: string,
 ): Promise<WriteResult> {
-  if (!isValidToken(token) || !isValidState(state)) {
+  if (!isValidShareId(id)) return { ok: false, reason: "invalid" };
+  if (
+    !isEnvelopeField(envelope.ct, MAX_CIPHERTEXT_CHARS) ||
+    !isIv(envelope.iv)
+  ) {
     return { ok: false, reason: "invalid" };
   }
   if (typeof secret !== "string" || secret.length < 20) {
@@ -115,13 +165,13 @@ export async function writeShareRecord(
   }
 
   const secretHash = await hash(secret);
-  const existing = await kvGet(key(token));
+  const existing = await kvGet(key(id));
 
   if (existing) {
     try {
       const stored = JSON.parse(existing) as StoredRecord;
-      // A token that already belongs to someone cannot be taken over by a
-      // reader who happens to know it.
+      // A shareId that already belongs to someone cannot be taken over by a
+      // reader who happens to hold the link.
       if (!equals(stored.secretHash, secretHash)) {
         return { ok: false, reason: "forbidden" };
       }
@@ -131,21 +181,22 @@ export async function writeShareRecord(
   }
 
   const record: StoredRecord = {
-    state,
+    ct: envelope.ct,
+    iv: envelope.iv,
     updatedAt: new Date().toISOString(),
     secretHash,
   };
-  await kvSet(key(token), JSON.stringify(record), SHARE_TTL_SECONDS);
+  await kvSet(key(id), JSON.stringify(record), SHARE_TTL_SECONDS);
   return { ok: true };
 }
 
 export async function revokeShareRecord(
-  token: string,
+  id: string,
   secret: string,
 ): Promise<WriteResult> {
-  if (!isValidToken(token)) return { ok: false, reason: "invalid" };
+  if (!isDeletableId(id)) return { ok: false, reason: "invalid" };
 
-  const existing = await kvGet(key(token));
+  const existing = await kvGet(key(id));
   if (!existing) return { ok: true }; // already gone
 
   try {
@@ -158,7 +209,7 @@ export async function revokeShareRecord(
     // Unreadable record: removing it is the safe outcome.
   }
 
-  await kvDelete(key(token));
+  await kvDelete(key(id));
   return { ok: true };
 }
 
