@@ -126,6 +126,16 @@
     font-family: var(--font-jakarta), system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
+  /* Body copy reads as ragged-left on a narrow phone frame once a paragraph
+     wraps to two or more lines. Justifying evens both edges; `text-wrap:
+     pretty` keeps the last line from stranding a single short word. Single-
+     line captions and labels are unaffected — justify only acts on wrapped
+     lines. `.arabic` sets its own `text-align: right`, and the utilities
+     layer outranks base regardless of source order, so that still wins here. */
+  p {
+    text-align: justify;
+    text-wrap: pretty;
+  }
 }
 
 /* The prototype's type scale, as named utilities so screens stay readable. */

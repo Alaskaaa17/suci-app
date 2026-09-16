@@ -83,7 +83,12 @@ function StatusBar() {
   }, []);
 
   return (
-    <div className="flex items-center justify-between px-6 pt-[15px] pb-1 text-[13px]/[1] font-semibold text-tx">
+    <div
+      // A real phone already draws its own status bar; this mock is only for
+      // the desktop frame in PhoneFrame, which is why it must stay hidden
+      // below `md` rather than always rendering as it did before.
+      className="hidden items-center justify-between px-6 pt-[15px] pb-1 text-[13px]/[1] font-semibold text-tx md:flex"
+    >
       {/* Rendered empty until mounted so SSR and client agree. */}
       <span>{now ?? ""}</span>
       <span aria-hidden="true" className="flex items-center gap-[5px] opacity-75">
