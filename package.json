@@ -12,7 +12,8 @@
     "test:e2e": "node tests/e2e.mjs",
     "icons": "node scripts/make-icons.mjs",
     "test:contrast": "node scripts/check-contrast.mjs",
-    "test:all": "npm run typecheck && npm run lint && npm test && npm run test:contrast"
+    "test:all": "npm run typecheck && npm run lint && npm test && npm run test:contrast",
+    "check:storage": "node scripts/check-storage.mjs"
   },
   "dependencies": {
     "next": "^15.5.25",

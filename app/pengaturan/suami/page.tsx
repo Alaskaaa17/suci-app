@@ -57,6 +57,12 @@ export default function ModeSuamiPage() {
 
   if (!data) return null;
   const share = data.profile.share;
+  // The link exists locally the instant the toggle is pressed, but the server
+  // has not necessarily seen it yet — publishShare is a real network round
+  // trip. Until it confirms, "Nyala" would be a promise the app cannot keep:
+  // a reader opening the link in that window gets "not found" for a link the
+  // owner just created correctly.
+  const confirmed = Boolean(share?.lastPublishedAt);
 
   // The key sits after the `#`, which is what keeps it off the wire. Building
   // this string is the only place it is ever concatenated into a URL, and it
@@ -239,10 +245,16 @@ export default function ModeSuamiPage() {
                   "block h-[7px] w-[7px] rounded-full",
                   storage === "memory"
                     ? "bg-peach-tx"
-                    : "animate-pulse bg-icon",
+                    : confirmed
+                      ? "animate-pulse bg-icon"
+                      : "bg-tx2",
                 )}
               />
-              {storage === "memory" ? "Belum aktif" : "Nyala"}
+              {storage === "memory"
+                ? "Belum aktif"
+                : confirmed
+                  ? "Nyala"
+                  : "Menyimpan…"}
             </span>
           </div>
 
@@ -255,19 +267,27 @@ export default function ModeSuamiPage() {
           </code>
 
           <p className="m-0 text-[12px]/[1.5] text-tx2">
-            Sekarang dia melihat{" "}
-            <span className="font-semibold text-tx">
-              {currentState === "haid" ? "haid" : "suci"}
-            </span>
-            . Berubah sendiri begitu statusmu berubah.
+            {confirmed ? (
+              <>
+                Sekarang dia melihat{" "}
+                <span className="font-semibold text-tx">
+                  {currentState === "haid" ? "haid" : "suci"}
+                </span>
+                . Berubah sendiri begitu statusmu berubah.
+              </>
+            ) : (
+              "Tautannya baru dibuat dan belum sampai ke server. Tunggu sebentar sebelum membagikannya — kalau dibuka terlalu cepat, halamannya masih kosong."
+            )}
           </p>
 
           <div className="flex gap-2">
-            <ShareAction onClick={copy} active={copied}>
+            <ShareAction onClick={copy} active={copied} disabled={!confirmed}>
               {copied ? "Tersalin" : "Salin"}
             </ShareAction>
-            <ShareAction onClick={sendToApp}>Bagikan</ShareAction>
-            <ShareAction onClick={rotate} disabled={busy !== null}>
+            <ShareAction onClick={sendToApp} disabled={!confirmed}>
+              Bagikan
+            </ShareAction>
+            <ShareAction onClick={rotate} disabled={busy !== null || !confirmed}>
               {busy === "rotate" ? "Mengganti…" : "Ganti"}
             </ShareAction>
           </div>
