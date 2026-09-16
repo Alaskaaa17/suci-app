@@ -178,12 +178,150 @@
   border-radius: 4px;
 }
 
+/* ---------------------------------------------------------------------------
+   Motion.
+
+   The design's voice is calm — "dengan tenang", "pelan-pelan saja" — so
+   nothing here bounces, overshoots or demands attention. Movement is short,
+   eased out, and mostly a few pixels of rise with a fade. Its job is to show
+   where something came from, not to be noticed.
+
+   Every animation below is switched off entirely by the reduced-motion rule
+   that follows. That is not a downgrade: the app is equally usable without a
+   single frame of it.
+   --------------------------------------------------------------------------- */
+
+@theme {
+  --ease-calm: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes suci-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes suci-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* A refusal, not an alarm: small, quick, and over. */
+@keyframes suci-shake {
+  0%,
+  100% {
+    transform: none;
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes suci-expand {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/** Content arriving on a screen. */
+@utility animate-rise {
+  animation: suci-rise 0.34s var(--ease-settle) both;
+}
+
+@utility animate-fade {
+  animation: suci-fade 0.24s var(--ease-calm) both;
+}
+
+@utility animate-shake {
+  animation: suci-shake 0.4s var(--ease-calm);
+}
+
+@utility animate-expand {
+  animation: suci-expand 0.2s var(--ease-calm) both;
+}
+
+/**
+ * Staggers a list so items arrive in reading order. Capped at eight, after
+ * which everything shares the last delay — beyond that the wait is longer
+ * than the animation is worth.
+ */
+@utility stagger {
+  & > * {
+    animation: suci-rise 0.34s var(--ease-settle) both;
+  }
+  & > *:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  & > *:nth-child(2) {
+    animation-delay: 30ms;
+  }
+  & > *:nth-child(3) {
+    animation-delay: 60ms;
+  }
+  & > *:nth-child(4) {
+    animation-delay: 90ms;
+  }
+  & > *:nth-child(5) {
+    animation-delay: 120ms;
+  }
+  & > *:nth-child(6) {
+    animation-delay: 150ms;
+  }
+  & > *:nth-child(7) {
+    animation-delay: 180ms;
+  }
+  & > *:nth-child(n + 8) {
+    animation-delay: 210ms;
+  }
+}
+
+/** Tactile feedback on anything tappable. */
+@utility press {
+  transition:
+    transform 0.12s var(--ease-calm),
+    filter 0.12s var(--ease-calm);
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* Transforms are the part that actually causes trouble for people with
+     vestibular sensitivity, so drop them rather than merely shortening them. */
+  .press:active {
+    transform: none !important;
   }
 }
 

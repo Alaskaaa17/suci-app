@@ -67,7 +67,7 @@ export default function KalenderPage() {
         </div>
       </header>
 
-      <div className="grid grid-cols-7 gap-[5px]">
+      <div key={`${cursor.year}-${cursor.month}`} className="animate-fade grid grid-cols-7 gap-[5px]">
         {WEEKDAY_HEADERS.map((d) => (
           <span
             key={d}
@@ -173,7 +173,7 @@ function DayCell({
         "flex h-[52px] flex-col items-center justify-center gap-1 rounded-[15px] border transition",
         statusSurface(status),
         isToday && "border-2 border-solid",
-        "hover:brightness-95",
+        "duration-150 hover:brightness-95 active:scale-90",
       )}
     >
       <span

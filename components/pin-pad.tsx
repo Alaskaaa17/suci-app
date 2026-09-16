@@ -18,7 +18,7 @@ export function PinDots({
 }) {
   return (
     <div
-      className={cx("flex gap-3", error && "animate-[shake_.4s_ease]")}
+      className={cx("flex gap-3", error && "animate-shake")}
       role="status"
       aria-label={`${filled} dari ${length} angka dimasukkan`}
     >
@@ -27,9 +27,12 @@ export function PinDots({
           key={i}
           aria-hidden="true"
           className={cx(
-            "block h-4 w-4 rounded-full border-[1.5px] transition",
+            "block h-4 w-4 rounded-full border-[1.5px]",
+            // The scale is what makes entry feel registered; the colour alone
+            // reads as a static diagram.
+            "transition-[background-color,border-color,transform] duration-200",
             i < filled
-              ? "border-icon bg-icon"
+              ? "scale-110 border-icon bg-icon"
               : error
                 ? "border-peach-b"
                 : "border-rose-b",
@@ -67,7 +70,7 @@ export function PinPad({
   }, [onDigit, onBackspace, disabled]);
 
   const key =
-    "flex h-[58px] items-center justify-center rounded-full border border-hair text-[20px] font-medium text-tx transition hover:border-rose-b hover:bg-rose active:scale-95 disabled:opacity-40";
+    "flex h-[58px] items-center justify-center rounded-full border border-hair text-[20px] font-medium text-tx transition duration-150 hover:border-rose-b hover:bg-rose active:scale-90 active:bg-rose disabled:opacity-40";
 
   return (
     <div className="grid w-full max-w-[290px] grid-cols-3 gap-3">

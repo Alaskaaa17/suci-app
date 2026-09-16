@@ -130,6 +130,20 @@ Known and accepted: `npm audit` reports a postcss advisory reachable only
 through Next's own build pipeline, on CSS we author ourselves. Clearing it
 needs Next 16. It does not ship to the browser.
 
+### Motion
+
+The design's voice is calm — "dengan tenang", "pelan-pelan saja" — so nothing
+bounces or overshoots. Movement is a few pixels of rise with a fade, eased out,
+and its job is to show where something came from rather than to be noticed. The
+ring on Beranda draws from empty and the day number counts up, because the
+screen did compute something and saying so is honest.
+
+Everything is defined in `globals.css` and switched off entirely under
+`prefers-reduced-motion`, including the transforms that actually cause trouble
+for vestibular sensitivity. The count-up checks the media query itself, since
+CSS cannot stop a JavaScript-driven number. The e2e suite asserts both that
+animation runs and that reduced motion kills it.
+
 ### Accessibility
 
 Audited against WCAG 2.2 Level AA. `npm run test:contrast` measures every
@@ -169,10 +183,37 @@ so this does not defend against code execution on an unlocked device.
 
 ### Husband mode
 
-The vault is sealed behind the PIN, so the shared page cannot read it. Mode
-Suami publishes a separate, deliberately tiny record holding exactly what the
-design promises to share — the token and one bit, haid or suci. Nothing may be
-added to that shape without re-reading what the screen tells the user it shares.
+This is the only reason Suci has a server at all, and it stores exactly one bit
+per link: whether the person is, today, haid or suci. No dates, no symptoms, no
+notes, no history, no name. A status that flips every few days carries almost
+nothing on its own; a status with a date attached is a cycle, which is the
+thing the user chose not to share.
+
+`lib/server/share.ts` is responsible for three properties:
+
+- **Holding the link does not let you write.** The token travels in a URL and
+  will be forwarded and screenshotted. Writing needs a second secret that never
+  leaves the owner's device, stored only as a hash, so neither a reader nor a
+  database dump can forge a status.
+- **A status cannot linger.** Records expire after a week. Someone who stops
+  using the app should not leave a stale "suci" standing for a reader to act
+  on — the link goes quiet and says so.
+- **Revocation is immediate.** Turning Mode Suami off, or rotating the link,
+  deletes the record. The old URL stops resolving at once.
+
+The rest of the app is untouched by this: entries, rulings and the vault never
+cross the network, and Pengaturan now says so in those words.
+
+#### Provisioning
+
+Storage comes from Upstash Redis, which is what Vercel KV provisions. In the
+Vercel dashboard: **Storage → Create → KV**, attach it to the project, redeploy.
+The env vars inject themselves; nothing needs configuring in code.
+
+Without them the app falls back to an in-process map so local development and
+the test suite work with nothing provisioned. That fallback is per-instance and
+disappears on restart — fine for `npm run dev`, useless in production, and
+`storageKind()` reports which is live.
 
 ### Offline
 

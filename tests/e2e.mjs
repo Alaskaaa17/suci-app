@@ -281,17 +281,58 @@ const link = await page.locator("code").textContent();
 check("share link generated", /\/s\/[a-z0-9-]+/.test(link));
 
 const token = link.split("/s/")[1];
-await page.goto(`${BASE}/s/${token}`, { waitUntil: "networkidle" });
-await page.waitForTimeout(300);
-const shared = await page.textContent("body");
-check("shared page shows today's status", /Hari ini dia/.test(shared));
+
+// The point of the share server: a completely separate browser, with no
+// vault, no localStorage and no service worker, must see the status.
+const reader = await browser.newContext({ viewport: { width: 390, height: 844 } });
+const readerPage = await reader.newPage();
+await readerPage.goto(`${BASE}/s/${token}`, { waitUntil: "domcontentloaded" });
+await readerPage.waitForSelector("text=Hari ini dia", { timeout: 15000 });
+const shared = await readerPage.textContent("body");
+check("a different device sees the status", /Hari ini dia/.test(shared));
+check(
+  "the reader has no vault of their own",
+  await readerPage.evaluate(() => localStorage.getItem("suci.vault") === null),
+);
 check(
   "shared page leaks nothing private",
-  !/Aisyah/.test(shared) && !/Kram perut/.test(shared),
+  !/Aisyah/.test(shared) && !/Kram perut/.test(shared) && !/\d{4}-\d{2}-\d{2}/.test(shared),
 );
 
-await page.goto(`${BASE}/s/tidak-valid-xxxx`, { waitUntil: "networkidle" });
-check("bad token rejected", /tidak berlaku/.test(await page.textContent("body")));
+// Holding the link must not confer the ability to change what it says.
+const forged = await readerPage.evaluate(async (t) => {
+  const res = await fetch("/api/share", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: t, state: "suci", secret: "z".repeat(32) }),
+  });
+  return res.status;
+}, token);
+check("a reader cannot forge the status", forged === 403, `HTTP ${forged}`);
+
+await readerPage.goto(`${BASE}/s/tidak-valid-xxxx`, {
+  waitUntil: "domcontentloaded",
+});
+await readerPage.waitForSelector("text=tidak berlaku", { timeout: 15000 });
+check("bad token rejected", true);
+
+// Turning Mode Suami off must kill the link for everyone, immediately.
+await go("/pengaturan/suami");
+await page.getByRole("button", { name: /Matikan Mode Suami/ }).click();
+await page.waitForTimeout(900);
+await readerPage.goto(`${BASE}/s/${token}`, { waitUntil: "domcontentloaded" });
+await readerPage
+  .waitForSelector("text=tidak berlaku", { timeout: 15000 })
+  .then(() => check("revoking kills the link on the other device", true))
+  .catch(() =>
+    check("revoking kills the link on the other device", false, "still live"),
+  );
+await reader.close();
+
+// Back on for the remaining checks.
+await go("/pengaturan/suami");
+await page.getByRole("button", { name: /Nyalakan Mode Suami/ }).click();
+await page.waitForSelector("text=Tautan aktif");
 
 /* ---- deletion requires the typed word --------------------------------------- */
 
@@ -474,6 +515,52 @@ if (swReady) {
 } else {
   results.push("SKIP  offline checks (no service worker — dev build?)");
 }
+
+/* ---- motion -------------------------------------------------------------------
+   The app must be equally usable with animation switched off — that is the
+   condition under which it is checked here.
+   ------------------------------------------------------------------------------ */
+
+await go("/");
+const animated = await page.evaluate(() => {
+  const card = document.querySelector("section");
+  return card ? getComputedStyle(card).animationName : "none";
+});
+check("the status card animates in", animated !== "none", animated);
+
+// Carries the vault across, so this exercises a real screen rather than
+// onboarding — a fresh context would have no data to render.
+const reducedContext = await browser.newContext({
+  viewport: { width: 390, height: 844 },
+  reducedMotion: "reduce",
+  storageState: await context.storageState(),
+});
+const reducedPage = await reducedContext.newPage();
+await reducedPage.goto(BASE, { waitUntil: "networkidle" });
+if (await reducedPage.locator("text=Masukkan PIN").count()) {
+  for (const d of PIN) {
+    await reducedPage.getByRole("button", { name: d, exact: true }).click();
+  }
+  await reducedPage.waitForSelector("text=Masukkan PIN", {
+    state: "detached",
+    timeout: 8000,
+  });
+}
+await reducedPage.waitForTimeout(400);
+const reducedDuration = await reducedPage.evaluate(() => {
+  const card = document.querySelector("section");
+  return card ? getComputedStyle(card).animationDuration : "0s";
+});
+check(
+  "reduced motion switches animation off",
+  parseFloat(reducedDuration) < 0.01,
+  reducedDuration,
+);
+check(
+  "the app still renders with motion off",
+  /Aisyah/.test(await reducedPage.textContent("body")),
+);
+await reducedContext.close();
 
 /* ---- accessibility ------------------------------------------------------------
    The design's own rule is that status is never carried by colour alone, and a

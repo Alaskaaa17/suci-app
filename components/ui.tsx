@@ -149,7 +149,7 @@ export function PrimaryButton({
 }
 
 const PRIMARY_CLASS =
-  "flex h-[54px] w-full items-center justify-center gap-2.5 rounded-full border-none text-[16px] font-semibold text-onsolid transition shadow-cta hover:brightness-[1.06] active:translate-y-px";
+  "flex h-[54px] w-full items-center justify-center gap-2.5 rounded-full border-none text-[16px] font-semibold text-onsolid shadow-cta transition duration-150 hover:brightness-[1.06] active:scale-[.98] active:brightness-95";
 
 const PRIMARY_STYLE = {
   background: "linear-gradient(180deg, var(--solid), var(--solid2))",
@@ -196,7 +196,7 @@ export function SecondaryButton({
       disabled={disabled}
       onClick={onClick}
       className={cx(
-        "flex h-[52px] w-full items-center justify-center gap-2.5 rounded-full border bg-transparent text-[15px] font-semibold transition",
+        "flex h-[52px] w-full items-center justify-center gap-2.5 rounded-full border bg-transparent text-[15px] font-semibold transition duration-150 active:scale-[.98]",
         border,
         disabled && "cursor-not-allowed opacity-55",
         className,
@@ -240,7 +240,7 @@ export function NavRow({
   );
 
   const cls =
-    "flex w-full items-center gap-3 rounded-2xl border border-hair px-[15px] py-[13px] transition hover:border-rose-b hover:bg-rose";
+    "flex w-full items-center gap-3 rounded-2xl border border-hair px-[15px] py-[13px] transition duration-150 hover:border-rose-b hover:bg-rose active:scale-[.99]";
 
   if (href) {
     return (
@@ -276,7 +276,7 @@ export function CheckRow({
   return (
     <label
       className={cx(
-        "flex cursor-pointer items-start gap-3 rounded-2xl border px-[15px] py-3.5 transition",
+        "flex cursor-pointer items-start gap-3 rounded-2xl border px-[15px] py-3.5 transition duration-150 active:scale-[.99]",
         tone === "plain"
           ? "border-hair hover:border-rose-b"
           : TONE_SURFACE[tone],
@@ -316,11 +316,19 @@ export function CheckBox({
     <span
       aria-hidden="true"
       className={cx(
-        "mt-px flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-[1.5px] transition",
-        checked ? "border-solid bg-solid text-onsolid" : cx(ring, "bg-bg"),
+        "mt-px flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-[1.5px] transition duration-200",
+        checked
+          ? "scale-105 border-solid bg-solid text-onsolid"
+          : cx(ring, "bg-bg"),
       )}
     >
-      <CheckIcon size={13} className={checked ? "opacity-100" : "opacity-0"} />
+      <CheckIcon
+        size={13}
+        className={cx(
+          "transition duration-200",
+          checked ? "scale-100 opacity-100" : "scale-50 opacity-0",
+        )}
+      />
     </span>
   );
 }
@@ -342,7 +350,7 @@ export function Chip({
       aria-pressed={active}
       onClick={onClick}
       className={cx(
-        "rounded-full border font-medium transition",
+        "rounded-full border font-medium transition duration-150 active:scale-95",
         size === "sm"
           ? "px-[13px] py-[7px] text-xs"
           : "px-3.5 py-[9px] text-[13px]",
@@ -376,11 +384,16 @@ export function Toggle({
       aria-label={label}
       onClick={() => onChange(!checked)}
       className={cx(
-        "flex h-[30px] w-[52px] shrink-0 items-center rounded-full px-[3px] transition",
-        checked ? cx(on, "justify-end") : "justify-start bg-hair",
+        "flex h-[30px] w-[52px] shrink-0 items-center rounded-full px-[3px] transition-colors duration-200",
+        checked ? on : "bg-hair",
       )}
     >
-      <span className="block h-6 w-6 rounded-full bg-white shadow-sm" />
+      <span
+        className={cx(
+          "block h-6 w-6 rounded-full bg-white shadow-sm transition-transform duration-200",
+          checked ? "translate-x-[22px]" : "translate-x-0",
+        )}
+      />
     </button>
   );
 }
@@ -554,7 +567,11 @@ export function AccordionBody({ children }: { children: ReactNode }) {
   const ctx = useContext(AccordionCtx);
   if (!ctx) throw new Error("AccordionBody must be inside <Accordion>");
   if (!ctx.open) return null;
-  return <div className="flex flex-col gap-2.5 px-4 pb-4">{children}</div>;
+  return (
+    <div className="animate-expand flex flex-col gap-2.5 px-4 pb-4">
+      {children}
+    </div>
+  );
 }
 
 /* ---------------------------- citations --------------------------------- */
@@ -613,7 +630,10 @@ export function ProgressBar({
       )}
     >
       <span
-        className={cx("block", tone === "sage" ? "bg-sage-tx" : "bg-icon")}
+        className={cx(
+          "block transition-[width] duration-700 ease-[var(--ease-settle)]",
+          tone === "sage" ? "bg-sage-tx" : "bg-icon",
+        )}
         style={{ width: `${pct}%` }}
       />
     </div>

@@ -54,7 +54,7 @@ export default function EdukasiPage() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="stagger flex flex-col gap-2">
         <NavRow
           href="/edukasi/dasar"
           tone="rose"

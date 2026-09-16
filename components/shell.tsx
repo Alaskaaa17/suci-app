@@ -121,11 +121,18 @@ export function TabBar() {
             href={href}
             aria-current={active ? "page" : undefined}
             className={cx(
-              "flex flex-1 flex-col items-center gap-[5px] py-1 transition",
+              "flex flex-1 flex-col items-center gap-[5px] py-1 transition duration-200 active:scale-95",
               active ? "text-tx" : "text-tx2 opacity-50 hover:opacity-80",
             )}
           >
-            <Icon size={21} strokeWidth={active ? 2 : 1.7} />
+            <Icon
+              size={21}
+              strokeWidth={active ? 2 : 1.7}
+              className={cx(
+                "transition-transform duration-200",
+                active ? "-translate-y-px scale-110" : "scale-100",
+              )}
+            />
             <span
               className={cx(
                 "text-[10.5px]/[1]",
@@ -153,12 +160,16 @@ export function Screen({
   tabBar = true,
   tone = "warm",
   className,
+  animate = true,
 }: {
   children?: ReactNode;
   tabBar?: boolean;
   tone?: "warm" | "stone";
   className?: string;
+  /** Off for screens that manage their own entrance. */
+  animate?: boolean;
 }) {
+  const pathname = usePathname();
   return (
     <div
       className={cx(
@@ -168,11 +179,16 @@ export function Screen({
     >
       <StatusBar />
       <div
+        // Keyed on the route so the entrance replays on each navigation —
+        // that is what makes a drill-in feel like moving forward rather than
+        // the content silently swapping underneath.
+        key={pathname}
         className={cx(
           "scroll-area flex min-h-0 flex-1 flex-col gap-3.5 px-5 pb-5",
           // Without this, children shrink below their content height inside
           // the fixed-height frame and their contents overlap.
           "[&>*]:shrink-0",
+          animate && "animate-fade",
           className,
         )}
       >

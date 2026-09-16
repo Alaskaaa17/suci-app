@@ -36,6 +36,12 @@ export interface Profile {
   prayerMethod: PrayerMethodId;
   /** Husband-mode share token; absent means sharing is off. */
   shareToken?: string;
+  /**
+   * Proves a status update comes from this device. Lives only inside the
+   * encrypted vault and is never put in the link, so someone holding the URL
+   * can read the status but cannot change it.
+   */
+  shareSecret?: string;
   onboardedAt?: string;
 }
 

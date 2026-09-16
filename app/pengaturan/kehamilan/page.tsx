@@ -11,21 +11,26 @@ import {
 } from "@/components/ui";
 import { addDays, daysBetween, formatMedium, todayIso } from "@/lib/date";
 import { MADHHABS } from "@/lib/fiqh/madhhab";
+import { useCountUp } from "@/components/motion";
 import { useApp } from "@/lib/store/app-store";
 
 const GESTATION_DAYS = 280; // 40 weeks from the last menstrual period
 
 export default function KehamilanPage() {
   const { data, today, update } = useApp();
-  if (!data) return null;
 
-  const { profile } = data;
-  const rules = MADHHABS[profile.madhhab];
-  const active = profile.specialState === "hamil";
-  const lmp = profile.pregnancyLmp;
-
+  // Derived before the early return: hooks must run in the same order on
+  // every render, and `data` is null only while the vault is still opening.
+  const profile = data?.profile;
+  const lmp = profile?.pregnancyLmp;
   const elapsed = lmp ? daysBetween(lmp, today) : 0;
   const weeks = Math.max(0, Math.floor(elapsed / 7));
+  const shownWeeks = useCountUp(weeks);
+
+  if (!data || !profile) return null;
+
+  const rules = MADHHABS[profile.madhhab];
+  const active = profile.specialState === "hamil";
   const trimester = weeks < 13 ? "pertama" : weeks < 27 ? "kedua" : "ketiga";
   const due = lmp ? addDays(lmp, GESTATION_DAYS) : null;
 
@@ -36,11 +41,11 @@ export default function KehamilanPage() {
       <h1 className="t-headline m-0 text-tx">Kehamilan</h1>
 
       {active && lmp ? (
-        <section className="flex flex-col items-center gap-2.5 rounded-3xl border border-rose-b bg-rose px-5 py-6 shadow-card">
+        <section className="animate-rise flex flex-col items-center gap-2.5 rounded-3xl border border-rose-b bg-rose px-5 py-6 shadow-card">
           <span className="t-label text-tx2">Usia kehamilan</span>
           <div className="flex items-baseline gap-2.5">
-            <span className="text-[72px]/[1] font-bold tracking-[-.045em] text-tx">
-              {weeks}
+            <span className="text-[72px]/[1] font-bold tracking-[-.045em] text-tx tabular-nums">
+              {shownWeeks}
             </span>
             <span className="text-lg/[1] font-semibold text-tx2">minggu</span>
           </div>

@@ -69,7 +69,7 @@ export default function BerandaPage() {
         }
       />
 
-      <div className="flex flex-col gap-2.5">
+      <div className="stagger flex flex-col gap-2.5">
         <NavRow
           href="/ibadah"
           tone="sage"

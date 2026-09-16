@@ -201,7 +201,7 @@ export default function IbadahPage() {
         )}
       </section>
 
-      <div className="flex flex-col gap-2.5">
+      <div className="stagger flex flex-col gap-2.5">
         <SectionLabel>Panduan</SectionLabel>
         <NavRow
           href="/ibadah/mandi-wajib"

@@ -15,6 +15,7 @@ import { StatusGlyph } from "@/components/status-glyph";
 import { daysBetween } from "@/lib/date";
 import { MADHHAB_ORDER, MADHHABS } from "@/lib/fiqh/madhhab";
 import { Classification } from "@/lib/fiqh/types";
+import { useCountUp } from "@/components/motion";
 import { useApp } from "@/lib/store/app-store";
 import { LeafIcon } from "@/components/icons";
 
@@ -22,14 +23,20 @@ import { LeafIcon } from "@/components/icons";
 export default function UntukIbuPage() {
   const router = useRouter();
   const { data, today, setEntry } = useApp();
+
+  // Derived before the early return: hooks must run in the same order on
+  // every render, and `data` is null only while the vault is still opening.
+  const inNifas =
+    data?.profile.specialState === "nifas" && !!data.profile.nifasStart;
+  const dayCount =
+    inNifas && data?.profile.nifasStart
+      ? daysBetween(data.profile.nifasStart, today) + 1
+      : 0;
+  const shownDays = useCountUp(dayCount);
+
   if (!data) return null;
 
   const rules = MADHHABS[data.profile.madhhab];
-  const inNifas =
-    data.profile.specialState === "nifas" && !!data.profile.nifasStart;
-  const dayCount = inNifas
-    ? daysBetween(data.profile.nifasStart!, today) + 1
-    : 0;
 
   return (
     <Screen tabBar={false} className="gap-[13px] pt-1.5">
@@ -52,8 +59,8 @@ export default function UntukIbuPage() {
             Nifas
           </Pill>
           <div className="flex items-baseline gap-2.5">
-            <span className="text-[44px]/[1] font-bold tracking-[-.035em] text-sage-tx">
-              {dayCount}
+            <span className="text-[44px]/[1] font-bold tracking-[-.035em] text-sage-tx tabular-nums">
+              {shownDays}
             </span>
             <span className="text-sm/[1.3] text-tx2">hari sejak melahirkan</span>
           </div>

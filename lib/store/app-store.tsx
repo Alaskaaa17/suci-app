@@ -19,6 +19,7 @@ import {
   type Profile,
   type Verdict,
 } from "@/lib/fiqh/types";
+import { publishShare as publishToServer } from "./share-client";
 import {
   blankEntry,
   clearFailedUnlocks,
@@ -246,25 +247,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [data, analysis, today]);
 
   /**
-   * Keep the share record in step with the live ruling, so "diperbarui
-   * otomatis" on the shared page is true. Turning Mode Suami off — or erasing
-   * the vault — removes the record entirely.
+   * Keep the shared status in step with the live ruling, so "diperbarui
+   * otomatis" on the shared page is true.
+   *
+   * Written twice: to the device, which is what the owner's own browser falls
+   * back to offline, and to the server, which is what makes the link work on
+   * anyone else's phone. Turning Mode Suami off — or erasing the vault —
+   * removes both.
    */
+  const token = data?.profile.shareToken;
+  const secret = data?.profile.shareSecret;
+
   useEffect(() => {
-    const token = data?.profile.shareToken;
     if (!token || !verdict) {
-      if (!data?.profile.shareToken) clearShare();
+      if (!token) clearShare();
       return;
     }
+
     const exempt =
       verdict.classification === Classification.HAID ||
       verdict.classification === Classification.NIFAS;
-    publishShare({
-      token,
-      state: exempt ? "haid" : "suci",
-      updatedAt: new Date().toISOString(),
-    });
-  }, [data?.profile.shareToken, verdict]);
+    const state: "haid" | "suci" = exempt ? "haid" : "suci";
+
+    publishShare({ token, state, updatedAt: new Date().toISOString() });
+    if (secret) void publishToServer({ token, secret }, state);
+  }, [token, secret, verdict]);
 
   const verdictFor = useCallback(
     (date: IsoDate) => {

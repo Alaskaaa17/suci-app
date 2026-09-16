@@ -270,17 +270,19 @@ export default function PengaturanPage() {
         />
       </div>
 
-      <div className="mb-5 flex items-center gap-[11px] rounded-2xl border border-hair px-[15px] py-[13px]">
-        <IconBubble tone="stone" size={30}>
+      <div className="mb-5 flex items-start gap-[11px] rounded-2xl border border-sage-b bg-sage px-[15px] py-[13px]">
+        <IconBubble tone="sage" size={30} className="bg-bg text-sage-tx">
           <CloudIcon size={16} />
         </IconBubble>
         <span className="flex-1">
-          <span className="block text-[13.5px]/[1.3] font-semibold text-tx">
-            Sinkronisasi cloud
+          <span className="block text-[13.5px]/[1.3] font-semibold text-sage-tx">
+            Catatanmu tidak pernah dikirim
           </span>
-          <span className="block text-[11.5px]/[1.4] text-tx2">
-            Belum tersedia. Catatanmu hanya ada di ponsel ini — kalau kamu ganti
-            perangkat, pindahkan lewat Data Saya.
+          <span className="mt-0.5 block text-[11.5px]/[1.45] text-tx2">
+            Semuanya dihitung dan disimpan di ponsel ini. Satu-satunya hal yang
+            pernah keluar adalah status hari ini — haid atau suci — dan hanya
+            kalau kamu menyalakan Mode Suami. Untuk pindah perangkat, bawa
+            datamu lewat Data Saya.
           </span>
         </span>
       </div>

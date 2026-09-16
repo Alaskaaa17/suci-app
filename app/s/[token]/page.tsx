@@ -7,52 +7,75 @@ import { Screen } from "@/components/shell";
 import { StatusGlyph } from "@/components/status-glyph";
 import { cx, IconBubble, Pill } from "@/components/ui";
 import { Classification } from "@/lib/fiqh/types";
-import { readShare, type ShareRecord } from "@/lib/store/vault";
+import {
+  fetchSharedStatus,
+  type SharePageResult,
+} from "@/lib/store/share-client";
 
 /**
  * Screen 22 — the page a husband opens.
  *
- * It reads the small share record, never the vault: the vault is sealed
- * behind the PIN and this page has no business opening it. That record holds
- * one bit — haid or suci — so there is nothing here to leak even if the link
- * is forwarded. No date, no history, no notes, no prediction, and no route
- * back into the app.
+ * Reads one bit from the share endpoint and renders it. There is no route back
+ * into the app from here, nothing is stored locally by the reader, and the
+ * page never touches the vault — it has no business opening it, and on
+ * someone else's phone there is nothing to open.
  */
 export default function SharedStatusPage() {
   const params = useParams<{ token: string }>();
-  const [record, setRecord] = useState<ShareRecord | null | undefined>(
-    undefined,
-  );
+  const [result, setResult] = useState<SharePageResult | null>(null);
 
-  // localStorage is client-only, so resolve after mount.
   useEffect(() => {
-    setRecord(readShare());
-  }, []);
+    let cancelled = false;
+    void fetchSharedStatus(params.token).then((r) => {
+      if (!cancelled) setResult(r);
+    });
 
-  if (record === undefined) {
-    return <Screen tabBar={false} />;
-  }
+    // Someone leaves this page open; refresh when they come back to it rather
+    // than showing yesterday's answer.
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      void fetchSharedStatus(params.token).then((r) => {
+        if (!cancelled) setResult(r);
+      });
+    };
+    document.addEventListener("visibilitychange", onVisible);
 
-  const authorised = !!record && record.token === params.token;
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [params.token]);
 
-  if (!authorised) {
+  if (result === null) {
     return (
       <Screen tabBar={false} className="items-center justify-center gap-5 px-7">
         <Brand />
-        <div className="w-full rounded-3xl border border-hair bg-bg px-6 py-8 text-center shadow-card">
+        <div className="h-[220px] w-full animate-pulse rounded-3xl border border-hair bg-rose/40" />
+      </Screen>
+    );
+  }
+
+  if (result.status !== "ok") {
+    return (
+      <Screen tabBar={false} className="items-center justify-center gap-5 px-7">
+        <Brand />
+        <div className="animate-rise w-full rounded-3xl border border-hair bg-bg px-6 py-8 text-center shadow-card">
           <h1 className="m-0 text-lg/[1.3] font-semibold text-tx">
-            Tautan ini tidak berlaku
+            {result.status === "gone"
+              ? "Tautan ini tidak berlaku"
+              : "Belum bisa memuat"}
           </h1>
           <p className="mt-2.5 mb-0 text-[13px]/[1.6] text-tx2">
-            Mungkin sudah diganti atau dimatikan oleh pemiliknya. Mintalah
-            tautan yang baru.
+            {result.status === "gone"
+              ? "Mungkin sudah diganti atau dimatikan oleh pemiliknya. Mintalah tautan yang baru."
+              : "Sambungan internet sedang tidak bisa dipakai. Coba lagi sebentar lagi."}
           </p>
         </div>
       </Screen>
     );
   }
 
-  const haid = record.state === "haid";
+  const haid = result.state === "haid";
 
   return (
     <Screen
@@ -63,7 +86,7 @@ export default function SharedStatusPage() {
 
       <div
         className={cx(
-          "flex w-full flex-col items-center gap-4 rounded-3xl border px-6 py-[30px] text-center shadow-card",
+          "animate-rise flex w-full flex-col items-center gap-4 rounded-3xl border px-6 py-[30px] text-center shadow-card",
           haid ? "border-rose-b bg-rose" : "border-sage-b bg-sage",
         )}
       >
@@ -108,7 +131,9 @@ export default function SharedStatusPage() {
           </span>
         </div>
         <p className="m-0 text-center text-[12px]/[1.5] text-tx2">
-          Diperbarui otomatis · dibagikan olehnya
+          {result.source === "device"
+            ? "Sedang offline · menampilkan salinan di perangkat ini"
+            : "Diperbarui otomatis · dibagikan olehnya"}
         </p>
       </div>
     </Screen>

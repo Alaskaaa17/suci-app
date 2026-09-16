@@ -5,6 +5,7 @@ import { Classification, type CycleAnalysis, type Verdict } from "@/lib/fiqh/typ
 import { worshipChips } from "@/lib/fiqh/verdict";
 import { ClockIcon, WavesIcon } from "./icons";
 import { StatusGlyph, STATUS_LABEL } from "./status-glyph";
+import { useCountUp, useMounted } from "./motion";
 import { cx, Pill } from "./ui";
 
 /**
@@ -48,7 +49,7 @@ export function StatusCard({
   return (
     <section
       className={cx(
-        "flex flex-col items-center gap-3.5 rounded-3xl border px-5 py-[22px] shadow-card",
+        "animate-rise flex flex-col items-center gap-3.5 rounded-3xl border px-5 py-[22px] shadow-card",
         surface,
       )}
     >
@@ -143,7 +144,12 @@ function DayRing({
   const RADIUS = 74;
   const circumference = 2 * Math.PI * RADIUS;
   const fraction = of && of > 0 ? Math.min(1, day / of) : 0;
-  const offset = circumference * (1 - fraction);
+
+  // Draw the arc from empty on first paint, so the ring reads as "this many
+  // days so far" rather than as a static dial that was always at this angle.
+  const mounted = useMounted();
+  const offset = circumference * (1 - (mounted ? fraction : 0));
+  const shownDay = useCountUp(day);
 
   return (
     <div className="relative flex h-[168px] w-[168px] items-center justify-center">
@@ -173,12 +179,15 @@ function DayRing({
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
+          style={{
+            transition: "stroke-dashoffset 900ms var(--ease-settle)",
+          }}
         />
       </svg>
       <div className="text-center">
         <div className="t-label text-tx2">Hari ke</div>
-        <div className="my-1 text-[56px]/[1] font-bold tracking-[-.04em] text-tx">
-          {day}
+        <div className="my-1 text-[56px]/[1] font-bold tracking-[-.04em] text-tx tabular-nums">
+          {shownDay}
         </div>
         {/* Narrow enough to stay clear of the ring stroke, which curves in
             sharply at the caption's height. */}
