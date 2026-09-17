@@ -183,7 +183,12 @@ export default function KebijakanPrivasiPage() {
         </h2>
         <p className="m-0 text-[13px]/[1.6] text-tx2">
           Pertanyaan soal privasi bisa dikirim ke{" "}
-          <span className="font-semibold text-tx">[isi alamat e-mail kontakmu di sini]</span>
+          <a
+            href="mailto:nafisarizka18@gmail.com"
+            className="font-semibold text-tx underline underline-offset-2"
+          >
+            nafisarizka18@gmail.com
+          </a>
           .
         </p>
       </section>
