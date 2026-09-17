@@ -3,6 +3,9 @@
       "target": {
         "namespace": "android_app",
         "package_name": "app.vercel.suci_app_ruby.twa",
-        "sha256_cert_fingerprints": ["38:0E:F7:7F:43:41:43:38:FA:22:74:18:86:03:2F:1A:47:9A:A6:59:2C:65:A6:22:6B:E9:51:1A:1A:1B:B8:28"]
+        "sha256_cert_fingerprints": [
+          "17:EA:A4:CF:6A:D4:1A:27:FE:A9:90:A2:4B:2C:D4:B4:FA:30:0D:B0:47:0F:9D:ED:10:7D:9D:B8:71:D4:28:CC",
+          "38:0E:F7:7F:43:41:43:38:FA:22:74:18:86:03:2F:1A:47:9A:A6:59:2C:65:A6:22:6B:E9:51:1A:1A:1B:B8:28"
+        ]
       }
     }]
