@@ -8,7 +8,7 @@ import { LockScreen } from "./lock-screen";
 import { PhoneFrame } from "./shell";
 
 /** Routes that render before there is a vault to read. */
-const PUBLIC_PREFIXES = ["/onboarding", "/s/", "/kebijakan-privasi"];
+const PUBLIC_PREFIXES = ["/onboarding", "/s/", "/kebijakan-privasi", "/hapus-data"];
 
 function isPublic(pathname: string) {
   return PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));

@@ -91,6 +91,16 @@ check(
   /Kebijakan Privasi/.test(await page.textContent("body")),
 );
 
+await page.goto(BASE + "/hapus-data", { waitUntil: "networkidle" });
+check(
+  "data deletion page renders without redirecting to onboarding",
+  page.url().endsWith("/hapus-data"),
+);
+check(
+  "data deletion page has a heading",
+  /Menghapus Data/.test(await page.textContent("body")),
+);
+
 /* ---- onboarding ----------------------------------------------------------- */
 
 await page.goto(BASE, { waitUntil: "networkidle" });
@@ -252,6 +262,7 @@ const ROUTES = [
   "/pengaturan/data-saya",
   "/pengaturan/suami",
   "/kebijakan-privasi",
+  "/hapus-data",
 ];
 
 for (const route of ROUTES) {

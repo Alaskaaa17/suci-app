@@ -289,14 +289,22 @@ export default function PengaturanPage() {
         </span>
       </div>
 
-      <Link
-        href="/kebijakan-privasi"
-        // py-1.5 lifts the tap target to the 24px WCAG 2.2 minimum without
-        // the footer text itself growing — same trick as BackLink.
-        className="-my-1.5 mb-3.5 py-1.5 text-center text-[12px]/[1.5] text-tx2 underline underline-offset-2 transition hover:text-tx"
-      >
-        Kebijakan Privasi
-      </Link>
+      <div className="-my-1.5 mb-3.5 flex items-center justify-center gap-4">
+        <Link
+          href="/kebijakan-privasi"
+          // py-1.5 lifts the tap target to the 24px WCAG 2.2 minimum without
+          // the footer text itself growing — same trick as BackLink.
+          className="py-1.5 text-[12px]/[1.5] text-tx2 underline underline-offset-2 transition hover:text-tx"
+        >
+          Kebijakan Privasi
+        </Link>
+        <Link
+          href="/hapus-data"
+          className="py-1.5 text-[12px]/[1.5] text-tx2 underline underline-offset-2 transition hover:text-tx"
+        >
+          Hapus Data
+        </Link>
+      </div>
     </Screen>
   );
 }
