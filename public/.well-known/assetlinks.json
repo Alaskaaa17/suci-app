@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.suci_app_ruby.twa",
+        "sha256_cert_fingerprints": ["38:0E:F7:7F:43:41:43:38:FA:22:74:18:86:03:2F:1A:47:9A:A6:59:2C:65:A6:22:6B:E9:51:1A:1A:1B:B8:28"]
+      }
+    }]
