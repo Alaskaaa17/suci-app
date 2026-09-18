@@ -17,7 +17,7 @@
  * Bump CACHE_VERSION on any change here; the old cache is dropped on activate.
  */
 
-const CACHE_VERSION = "suci-v4";
+const CACHE_VERSION = "suci-v5";
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const ASSET_CACHE = `${CACHE_VERSION}-assets`;
 const RSC_CACHE = `${CACHE_VERSION}-rsc`;
@@ -33,6 +33,7 @@ const ROUTES = [
   "/ibadah",
   "/ibadah/mandi-wajib",
   "/ibadah/qadha-shalat",
+  "/ibadah/qadha-puasa",
   "/edukasi",
   "/edukasi/dasar",
   "/edukasi/istihadhah",
