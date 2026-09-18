@@ -26,6 +26,34 @@ const OPEN = [
   "Hadir di majelis ilmu",
 ];
 
+const BLOOD_COLORS = [
+  {
+    name: "Hitam",
+    swatch: "#2A2320",
+    note: "Sebagian kitab fiqih menyebut darah haid yang pekat berwarna hitam, terasa panas, dan berbau.",
+  },
+  {
+    name: "Merah",
+    swatch: "#9E2B2B",
+    note: "Warna yang paling banyak dialami — ada yang merah pekat, ada yang merah hati.",
+  },
+  {
+    name: "Coklat",
+    swatch: "#7A4B32",
+    note: "Sering muncul di awal atau akhir masa haid. Urutan warnanya berbeda-beda pada tiap orang.",
+  },
+  {
+    name: "Kuning",
+    swatch: "#C99A3B",
+    note: "Sering dikira tanda sudah suci — padahal belum, selama warnanya belum putih bersih.",
+  },
+  {
+    name: "Keruh",
+    swatch: "#8C8171",
+    note: "Sama seperti kuning: belum berarti suci, meski sering disangka sudah waktunya mandi.",
+  },
+];
+
 export default function DasarPage() {
   const { data } = useApp();
   const rules = MADHHABS[data?.profile.madhhab ?? "syafii"];
@@ -79,6 +107,41 @@ export default function DasarPage() {
             <span className="text-[13px]/[1.5] text-tx2">{item}</span>
           </div>
         ))}
+      </section>
+
+      <section className="flex flex-col gap-3 rounded-[20px] border border-hair p-4">
+        <div>
+          <h2 className="m-0 text-[15.5px]/[1.3] font-semibold text-tx">
+            Warna darah haid
+          </h2>
+          <p className="mt-1 mb-0 text-[12.5px]/[1.55] text-tx2">
+            Darah haid tidak selalu merah. Lima warna ini yang dikenali dalam
+            fiqih.
+          </p>
+        </div>
+        {BLOOD_COLORS.map((c) => (
+          <div key={c.name} className="flex items-start gap-2.5">
+            <span
+              className="mt-1 block h-4 w-4 shrink-0 rounded-full border border-hair"
+              style={{ backgroundColor: c.swatch }}
+              aria-hidden="true"
+            />
+            <span className="text-[13px]/[1.5] text-tx2">
+              <span className="font-semibold text-tx">{c.name}.</span>{" "}
+              {c.note}
+            </span>
+          </div>
+        ))}
+        <div className="rounded-2xl bg-rose px-[15px] py-3.5">
+          <p className="m-0 text-[12.5px]/[1.6] font-medium text-tx">
+            Suci baru terjadi kalau cairan yang keluar sudah bersih, putih
+            seperti kapas atau tisu — bukan kuning atau keruh.
+          </p>
+        </div>
+        <CitationCard
+          work="Risalatul Mahid"
+          note="Disusun berdasarkan dalil dan pengamatan langsung pada ratusan perempuan dari berbagai daerah dan latar ekonomi."
+        />
       </section>
 
       <section className="flex flex-col gap-2.5 rounded-[20px] border border-stone-b bg-stone-card p-4">
