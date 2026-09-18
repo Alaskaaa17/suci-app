@@ -19,6 +19,7 @@ import {
   SectionLabel,
 } from "@/components/ui";
 import { formatDayMonth, formatDuration } from "@/lib/date";
+import { formatHijri, hijriForDate } from "@/lib/fiqh/hijri";
 import {
   computePrayerTimes,
   nextPrayer,
@@ -59,6 +60,8 @@ export default function IbadahPage() {
     });
   }, [data, today]);
 
+  const hijri = useMemo(() => hijriForDate(today), [today]);
+
   if (!data || !verdict) return null;
 
   const exempt =
@@ -80,6 +83,9 @@ export default function IbadahPage() {
         <h1 className="t-headline m-0 text-tx">Ibadah</h1>
         <p className="mt-1.5 mb-0 text-[13.5px]/[1.55] text-tx2">
           {formatDayMonth(today)} · {data.profile.location.label}
+        </p>
+        <p className="mt-0.5 mb-0 text-[12px]/[1.4] text-tx2/80">
+          {formatHijri(hijri)} · perkiraan hisab, ikuti kriteria Kemenag
         </p>
       </header>
 
