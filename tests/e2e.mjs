@@ -246,6 +246,7 @@ const ROUTES = [
   "/ibadah",
   "/ibadah/mandi-wajib",
   "/ibadah/qadha-shalat",
+  "/ibadah/qadha-puasa",
   "/edukasi",
   "/edukasi/dasar",
   "/edukasi/istihadhah",

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Screen } from "@/components/shell";
 import {
@@ -153,6 +154,12 @@ export default function IbadahPage() {
           <h2 className="m-0 flex-1 text-base/[1.3] font-semibold text-tx">
             Qadha puasa Ramadan
           </h2>
+          <Link
+            href="/ibadah/qadha-puasa"
+            className="text-[12.5px]/[1] font-semibold text-tx2 underline decoration-hair underline-offset-2 hover:text-tx"
+          >
+            Tambah hari
+          </Link>
         </div>
 
         {fastOwed > 0 ? (
@@ -195,8 +202,14 @@ export default function IbadahPage() {
         ) : (
           <p className="m-0 text-[13px]/[1.6] text-tx2">
             Belum ada hari puasa yang tercatat menunggu qadha. Kalau kamu
-            melewatkan puasa Ramadan karena haid, catat jumlahnya di Pengaturan
-            supaya bisa dicicil dari sini.
+            melewatkan puasa Ramadan karena haid,{" "}
+            <Link
+              href="/ibadah/qadha-puasa"
+              className="font-semibold text-tx underline decoration-hair underline-offset-2"
+            >
+              catat jumlahnya di sini
+            </Link>{" "}
+            supaya bisa dicicil.
           </p>
         )}
       </section>
@@ -218,6 +231,17 @@ export default function IbadahPage() {
           subtitle={
             prayersOwed > 0
               ? `${prayersOwed} catatan belum lunas`
+              : "Tidak ada yang belum lunas"
+          }
+        />
+        <NavRow
+          href="/ibadah/qadha-puasa"
+          tone="peach"
+          icon={<MoonIcon size={17} />}
+          title="Qadha puasa Ramadan"
+          subtitle={
+            fastOwed - fastSettled > 0
+              ? `${fastOwed - fastSettled} hari belum lunas`
               : "Tidak ada yang belum lunas"
           }
         />
