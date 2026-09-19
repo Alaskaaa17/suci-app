@@ -342,11 +342,11 @@ export function CloudIcon({ strokeWidth = 1.7, ...rest }: IconProps) {
   );
 }
 
-export function BackspaceIcon({ strokeWidth = 1.6, ...rest }: IconProps) {
+export function BackspaceIcon({ strokeWidth = 1.9, ...rest }: IconProps) {
   return (
-    <Svg strokeWidth={strokeWidth} {...rest} round={false}>
-      <path d="M9 5h11v14H9L3 12z" />
-      <path d="M13 9.5l5 5M18 9.5l-5 5" />
+    <Svg strokeWidth={strokeWidth} {...rest}>
+      <path d="M8.5 5.5h10.5a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H8.5L3.2 12z" />
+      <path d="M10.8 9.7l4.2 4.6M15 9.7l-4.2 4.6" />
     </Svg>
   );
 }

@@ -101,7 +101,7 @@ export function PinPad({
         aria-label="Hapus satu angka"
         className={key}
       >
-        <BackspaceIcon size={22} />
+        <BackspaceIcon size={24} />
       </button>
     </div>
   );
