@@ -38,7 +38,7 @@ export function buildVerdict(
       const day = ruling.dayOfEpisode ?? 1;
       headline = `Hari ke-${day} haid`;
       body =
-        "Kamu sedang libur shalat dan puasa. Allah tidak membebanimu — istirahatlah dengan tenang.";
+        "Kamu sedang libur shalat dan puasa. Allah tidak membebanimu, istirahatlah dengan tenang.";
 
       if (episode) {
         steps.push({
@@ -52,7 +52,7 @@ export function buildVerdict(
         if (prevHaid) {
           const gap = daysBetween(prevHaid.end, episode.start) - 1;
           steps.push({
-            text: `Jarak suci dari haid sebelumnya ${gap} hari — memenuhi batas minimal ${rules.minTuhrDays} hari.`,
+            text: `Jarak suci dari haid sebelumnya ${gap} hari, memenuhi batas minimal ${rules.minTuhrDays} hari.`,
           });
         }
 
@@ -68,7 +68,7 @@ export function buildVerdict(
         });
 
         if (episode.truncatedAt) {
-          advisory = `Episode ini menyentuh batas maksimal ${rules.haidMaxDays} hari. Pemisahan hari haid dari istihadhah pada kasus seperti ini bergantung pada tamyiz dan kebiasaanmu — sebaiknya ditanyakan pada ulama yang kamu percaya.`;
+          advisory = `Episode ini menyentuh batas maksimal ${rules.haidMaxDays} hari. Pemisahan hari haid dari istihadhah pada kasus seperti ini bergantung pada tamyiz dan kebiasaanmu, sebaiknya ditanyakan pada ulama yang kamu percaya.`;
         }
       }
       break;
@@ -87,7 +87,7 @@ export function buildVerdict(
         text: `Batas maksimal nifas menurut mazhab ${rules.name} adalah ${rules.nifasMaxDays} hari.`,
       });
       steps.push({
-        text: "Kalau darah berhenti sebelum batas itu, kamu mandi wajib dan langsung kembali shalat — tidak perlu menunggu genap.",
+        text: "Kalau darah berhenti sebelum batas itu, kamu mandi wajib dan langsung kembali shalat. Tidak perlu menunggu genap.",
       });
       break;
     }
@@ -142,9 +142,9 @@ export function buildVerdict(
     case Classification.PREDICTED_HAID: {
       headline = "Perkiraan haid";
       body =
-        "Ini baru perkiraan dari rata-rata siklusmu — belum terjadi, dan belum menjadi hukum apa pun.";
+        "Ini baru perkiraan dari rata-rata siklusmu, belum terjadi, dan belum menjadi hukum apa pun.";
       steps.push({
-        text: `Perkiraan dihitung dari rata-rata siklus ${analysis.averageCycleLength ?? "—"} hari dan lama haid ${analysis.averageHaidLength ?? "—"} hari.`,
+        text: `Perkiraan dihitung dari rata-rata siklus ${analysis.averageCycleLength ?? "-"} hari dan lama haid ${analysis.averageHaidLength ?? "-"} hari.`,
       });
       steps.push({
         text: "Status sebenarnya baru ditetapkan setelah kamu mencatat darahnya.",

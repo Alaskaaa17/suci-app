@@ -178,8 +178,8 @@ export default function DataSayaPage() {
               Berkas untuk{" "}
               <span className="font-semibold text-tx">
                 {picked.profile.name || "kamu"}
-              </span>{" "}
-              — {Object.keys(picked.entries).length} catatan harian. Ini akan{" "}
+              </span>
+              , {Object.keys(picked.entries).length} catatan harian. Ini akan{" "}
               <span className="font-semibold text-tx">menggantikan</span> data
               yang sedang aktif di ponsel ini.
             </p>

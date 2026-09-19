@@ -182,7 +182,7 @@ export function monthGrid(year: number, month: number): (IsoDate | null)[] {
 
 /** "2j 14m" — the countdown format used on the worship screen. */
 export function formatDuration(minutes: number): string {
-  if (minutes < 0) return "—";
+  if (minutes < 0) return "-";
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return h > 0 ? `${h}j ${m}m` : `${m}m`;

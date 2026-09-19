@@ -79,7 +79,7 @@ export default function UntukIbuPage() {
         <section className="rounded-[22px] border border-hair bg-bg p-[18px] shadow-card">
           <p className="m-0 text-[13.5px]/[1.6] text-tx2">
             Mode Nifas sedang tidak aktif. Kalau kamu baru melahirkan, nyalakan
-            di Pengaturan dan isi tanggalnya — Suci akan menghitung masa
+            di Pengaturan dan isi tanggalnya. Suci akan menghitung masa
             nifasmu dan menyesuaikan status ibadah.
           </p>
         </section>

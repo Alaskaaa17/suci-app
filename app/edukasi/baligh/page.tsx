@@ -7,7 +7,7 @@ const POINTS = [
   {
     n: 1,
     title: "Yang berubah",
-    body: "Sejak haid pertama, kamu mulai menanggung kewajiban ibadah sendiri — dan juga keringanannya.",
+    body: "Sejak haid pertama, kamu mulai menanggung kewajiban ibadah sendiri, dan juga keringanannya.",
   },
   {
     n: 2,

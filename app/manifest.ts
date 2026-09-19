@@ -10,7 +10,7 @@ import type { MetadataRoute } from "next";
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Suci — pelacak siklus & ibadah",
+    name: "Suci, pelacak siklus & ibadah",
     short_name: "Suci",
     description:
       "Pelacak siklus haid berbasis fiqih thaharah empat mazhab, dengan jadwal ibadah harian. Catatanmu tersimpan di ponselmu saja.",

@@ -51,7 +51,7 @@ export default function IstihadhahPage() {
         </h2>
         <ul className="mt-2.5 mb-0 flex list-none flex-col gap-2 p-0 text-[13px]/[1.6] text-tx2">
           <li>
-            Kurang dari batas minimal haid mazhabmu —{" "}
+            Kurang dari batas minimal haid mazhabmu,{" "}
             <span className="font-semibold text-peach-tx">
               {rules.haidMinDays === 0
                 ? "mazhab ini tidak punya batas minimal"
@@ -60,7 +60,7 @@ export default function IstihadhahPage() {
             .
           </li>
           <li>
-            Lewat batas maksimal haid —{" "}
+            Lewat batas maksimal haid,{" "}
             <span className="font-semibold text-peach-tx">
               {rules.haidMaxDays} hari
             </span>
@@ -74,7 +74,7 @@ export default function IstihadhahPage() {
             terpenuhi.
           </li>
           {!rules.haidDuringPregnancy && (
-            <li>Keluar saat hamil — menurut mazhab {rules.name}.</li>
+            <li>Keluar saat hamil, menurut mazhab {rules.name}.</li>
           )}
         </ul>
       </section>
@@ -133,7 +133,7 @@ export default function IstihadhahPage() {
       <Advisory icon={<WarningIcon size={15} />}>
         Memisahkan hari haid dari istihadhah pada pendarahan panjang memerlukan
         tamyiz dan kebiasaanmu sendiri. Suci berhenti pada kasus seperti itu dan
-        menyarankanmu bertanya pada ulama — bawa saja catatan tanggalmu.
+        menyarankanmu bertanya pada ulama. Bawa saja catatan tanggalmu.
       </Advisory>
     </Screen>
   );

@@ -168,7 +168,7 @@ function DayCell({
       onClick={onSelect}
       aria-current={isToday ? "date" : undefined}
       // The visible glyph is decorative, so the full meaning goes on the label.
-      aria-label={`${dayNumber} — ${STATUS_LABEL[status]}${isToday ? ", hari ini" : ""}`}
+      aria-label={`${dayNumber}, ${STATUS_LABEL[status]}${isToday ? ", hari ini" : ""}`}
       className={cx(
         "flex h-[52px] flex-col items-center justify-center gap-1 rounded-[15px] border transition",
         statusSurface(status),

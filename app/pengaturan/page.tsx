@@ -281,7 +281,7 @@ export default function PengaturanPage() {
           </span>
           <span className="mt-0.5 block text-[11.5px]/[1.45] text-tx2">
             Semuanya dihitung dan disimpan di ponsel ini. Satu-satunya hal yang
-            pernah keluar adalah status hari ini — haid atau suci — hanya kalau
+            pernah keluar adalah status hari ini (haid atau suci), hanya kalau
             kamu menyalakan Mode Suami, dan itupun sudah terkunci sebelum
             dikirim sehingga servernya sendiri tidak bisa membacanya. Untuk
             pindah perangkat, bawa datamu lewat Data Saya.

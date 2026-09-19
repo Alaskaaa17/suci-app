@@ -72,7 +72,7 @@ export default function MenyusuiPage() {
           {
             n: 3,
             strong: "Qadha ditambah fidyah",
-            rest: ` bila khawatir pada bayi saja — menurut ${rules.name}.`,
+            rest: ` bila khawatir pada bayi saja, menurut ${rules.name}.`,
           },
         ].map((row) => (
           <div key={row.n} className="flex items-start gap-2.5">

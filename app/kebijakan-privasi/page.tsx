@@ -32,7 +32,7 @@ export default function KebijakanPrivasiPage() {
         <h1 className="t-headline m-0 text-tx">Kebijakan Privasi</h1>
         <p className="mt-1.5 mb-0 text-[13.5px]/[1.55] text-tx2">
           Berlaku sejak {EFFECTIVE_DATE}. Ditulis dalam bahasa biasa, bukan
-          bahasa hukum yang berputar-putar — karena isinya memang sesederhana
+          bahasa hukum yang berputar-putar, karena isinya memang sesederhana
           itu.
         </p>
       </div>
@@ -65,7 +65,7 @@ export default function KebijakanPrivasiPage() {
           <strong>penyimpanan lokal peramban HP-mu</strong> (localStorage),
           terenkripsi dengan PIN yang kamu buat sendiri (PBKDF2-SHA-256 lalu
           AES-256-GCM). Suci tidak mengirim data ini ke server mana pun untuk
-          dihitung, disinkronkan, atau dicadangkan — semua perhitungan fiqih
+          dihitung, disinkronkan, atau dicadangkan. Semua perhitungan fiqih
           dan jadwal ibadah berjalan langsung di HP-mu, termasuk saat offline.
         </p>
         <p className="m-0 text-[13px]/[1.6] text-tx2">
@@ -80,7 +80,7 @@ export default function KebijakanPrivasiPage() {
             <LockIcon size={17} />
           </IconBubble>
           <h2 className="m-0 text-[15.5px]/[1.3] font-semibold text-tx">
-            Mode Suami — satu-satunya fitur yang menyentuh server
+            Mode Suami: satu-satunya fitur yang menyentuh server
           </h2>
         </div>
         <p className="m-0 text-[13px]/[1.6] text-tx2">
@@ -95,13 +95,13 @@ export default function KebijakanPrivasiPage() {
         <p className="m-0 text-[13px]/[1.6] text-tx2">
           Yang tetap terlihat oleh penyedia server walau isinya terkunci:
           waktu setiap kali status itu diperbarui. Kami tidak menyembunyikan
-          ini — pola waktu pembaruan bisa menggambarkan siklus, dan Suci
+          ini. Pola waktu pembaruan bisa menggambarkan siklus, dan Suci
           sengaja mengirim seminimal mungkin (hanya saat statusnya benar-benar
           berubah) untuk mengecilkan itu, bukan menghapusnya sepenuhnya.
         </p>
         <p className="m-0 text-[13px]/[1.6] text-tx2">
           Tautan berbagi berhenti berlaku otomatis setelah 14 hari tanpa
-          pembaruan, dan bisa dimatikan kapan saja dari Pengaturan — begitu
+          pembaruan, dan bisa dimatikan kapan saja dari Pengaturan. Begitu
           dimatikan, catatan itu langsung dihapus dari server.
         </p>
       </section>
@@ -118,7 +118,7 @@ export default function KebijakanPrivasiPage() {
           </li>
           <li>Tidak ada penjualan atau pembagian data ke pihak ketiga.</li>
           <li>
-            Tidak ada pengumpulan lokasi GPS — kota untuk jadwal shalat dipilih
+            Tidak ada pengumpulan lokasi GPS. Kota untuk jadwal shalat dipilih
             manual dari daftar, bukan dibaca dari sensor HP.
           </li>
         </ul>
@@ -136,7 +136,7 @@ export default function KebijakanPrivasiPage() {
         <p className="m-0 text-[12.5px]/[1.65] text-stone-tx2">
           Aplikasi ini dijalankan di atas Vercel (hosting). Kalau Mode Suami
           dinyalakan, ciphertext status tersimpan sementara di Upstash Redis.
-          Keduanya hanya memproses data sebagai penyedia infrastruktur —
+          Keduanya hanya memproses data sebagai penyedia infrastruktur:
           tidak satu pun dari mereka menerima data yang bisa dibaca, dan
           tidak ada pihak ketiga lain yang terlibat.
         </p>
@@ -147,7 +147,7 @@ export default function KebijakanPrivasiPage() {
           Hakmu atas data ini
         </h2>
         <p className="m-0 text-[13px]/[1.6] text-tx2">
-          Karena datanya ada di HP-mu, kontrolnya juga di tanganmu langsung —
+          Karena datanya ada di HP-mu, kontrolnya juga di tanganmu langsung.
           tidak perlu meminta ke kami. Dari Pengaturan → Data Saya kamu bisa
           mengunduh seluruh catatanmu sebagai berkas, memulihkannya di
           perangkat lain, atau menghapus semuanya secara permanen, kapan saja.

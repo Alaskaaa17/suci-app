@@ -60,7 +60,7 @@ export default function MenopausePage() {
             Fase baru, tenang
           </h1>
           <p className="mt-2 mb-0 text-sm/[1.6] text-balance text-tx2">
-            Siklusmu selesai bertugas. Ibadahmu kini berjalan tanpa jeda — dan
+            Siklusmu selesai bertugas. Ibadahmu kini berjalan tanpa jeda, dan
             itu kabar baik.
           </p>
         </div>

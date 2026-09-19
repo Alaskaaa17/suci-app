@@ -32,7 +32,7 @@ export const FAQ: FaqItem[] = [
   {
     question: "Darahku keluar 17 hari, apa itu masih haid?",
     answer:
-      "Lewat batas maksimal mazhabmu, sisanya dihukumi istihadhah. Untuk memisahkan hari haid dari istihadhah pada kasus panjang seperti ini, ulama memakai tamyiz dan kebiasaanmu — sebaiknya ditanyakan langsung.",
+      "Lewat batas maksimal mazhabmu, sisanya dihukumi istihadhah. Untuk memisahkan hari haid dari istihadhah pada kasus panjang seperti ini, ulama memakai tamyiz dan kebiasaanmu, sebaiknya ditanyakan langsung.",
     citation: {
       work: "Al-Majmu' Syarh al-Muhadzdzab",
       locus: "jld. 2",
@@ -59,7 +59,7 @@ export const FAQ: FaqItem[] = [
   {
     question: "Aku haid di siang Ramadan setelah berpuasa setengah hari. Bagaimana?",
     answer:
-      "Puasa hari itu batal dan diqadha nanti. Kamu tidak berdosa — ini rukhsah, bukan pelanggaran.",
+      "Puasa hari itu batal dan diqadha nanti. Kamu tidak berdosa, ini rukhsah, bukan pelanggaran.",
     agreed: true,
   },
   {
@@ -92,7 +92,7 @@ export const FAQ: FaqItem[] = [
   {
     question: "Apakah perempuan hamil bisa haid?",
     answer:
-      "Syafi'i dan Maliki mengatakan bisa, sehingga darahnya menghentikan shalat. Hanafi dan Hanbali mengatakan tidak — darah itu istihadhah dan ibadah tetap berjalan.",
+      "Syafi'i dan Maliki mengatakan bisa, sehingga darahnya menghentikan shalat. Hanafi dan Hanbali mengatakan tidak, darah itu istihadhah dan ibadah tetap berjalan.",
     citation: { work: "Bidayatul Mujtahid", locus: "Bab Haid" },
     seeAlso: { label: "Lihat halaman Kehamilan", href: "/pengaturan/kehamilan" },
   },

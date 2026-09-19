@@ -129,7 +129,7 @@ function CatatScreen() {
           <span className="mt-0.5 block text-[12.5px]/[1.4] text-tx2">
             {draft.bleeding
               ? dayOfEpisode
-                ? `Aktif — hari ke-${dayOfEpisode} ${verdict ? STATUS_LABEL[verdict.classification].toLowerCase() : ""}`
+                ? `Aktif, hari ke-${dayOfEpisode} ${verdict ? STATUS_LABEL[verdict.classification].toLowerCase() : ""}`
                 : "Aktif"
               : "Tidak ada"}
           </span>

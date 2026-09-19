@@ -26,7 +26,7 @@ export default function HapusDataPage() {
         <h1 className="t-headline m-0 text-tx">Menghapus Data di Suci</h1>
         <p className="mt-1.5 mb-0 text-[13.5px]/[1.55] text-tx2">
           Karena catatanmu tersimpan di ponselmu sendiri, penghapusannya juga
-          langsung dari ponselmu — tidak perlu menghubungi siapa pun atau
+          langsung dari ponselmu. Tidak perlu menghubungi siapa pun atau
           menunggu.
         </p>
       </div>
@@ -57,7 +57,7 @@ export default function HapusDataPage() {
           </li>
         </ol>
         <p className="m-0 text-[12px]/[1.5] text-tx2">
-          Periode retensi: tidak ada — terhapus saat itu juga, tidak
+          Periode retensi: tidak ada, terhapus saat itu juga, tidak
           tersimpan di mana pun setelahnya.
         </p>
       </section>

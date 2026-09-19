@@ -32,7 +32,7 @@ export const GLOSSARY: GlossaryTerm[] = [
     arabic: "حَيْض",
     category: "darah",
     definition:
-      "Darah yang keluar dari rahim perempuan sehat secara alami pada waktu tertentu — bukan karena penyakit atau melahirkan.",
+      "Darah yang keluar dari rahim perempuan sehat secara alami pada waktu tertentu, bukan karena penyakit atau melahirkan.",
   },
   {
     term: "Hadas besar",
@@ -100,7 +100,7 @@ export const GLOSSARY: GlossaryTerm[] = [
     arabic: "طَهَارَة",
     category: "bersuci",
     definition:
-      "Bersuci — keseluruhan bab fiqih tentang menghilangkan hadas dan najis. Inilah bab yang menaungi seluruh isi aplikasi ini.",
+      "Bersuci, keseluruhan bab fiqih tentang menghilangkan hadas dan najis. Inilah bab yang menaungi seluruh isi aplikasi ini.",
   },
   {
     term: "Ghusl",

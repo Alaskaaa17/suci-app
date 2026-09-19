@@ -26,7 +26,7 @@ const EXPLANATIONS: Record<
   },
   unavailable: {
     title: "Belum bisa menampilkan status",
-    body: "Layanannya sedang belum siap menyimpan status, jadi tautan ini belum bisa dibaca. Tautannya sendiri tidak salah dan tidak dimatikan — coba lagi nanti.",
+    body: "Layanannya sedang belum siap menyimpan status, jadi tautan ini belum bisa dibaca. Tautannya sendiri tidak salah dan tidak dimatikan, coba lagi nanti.",
   },
   offline: {
     title: "Belum bisa memuat",
@@ -34,7 +34,7 @@ const EXPLANATIONS: Record<
   },
   "no-key": {
     title: "Kuncinya tidak terbaca",
-    body: "Tautan ini perlu bagian setelah tanda # untuk bisa dibuka. Bagian itu tidak ditemukan — mungkin terpotong, atau hilang saat dikirim lewat aplikasi pesan. Minta tautan utuhnya dikirim ulang, lalu buka langsung dari situ.",
+    body: "Tautan ini perlu bagian setelah tanda # untuk bisa dibuka. Bagian itu tidak ditemukan, mungkin terpotong, atau hilang saat dikirim lewat aplikasi pesan. Minta tautan utuhnya dikirim ulang, lalu buka langsung dari situ.",
   },
   "wrong-key": {
     title: "Kunci ini tidak cocok",
@@ -147,7 +147,7 @@ export default function SharedStatusPage() {
             <span className="font-semibold">Tautan ini perlu diganti.</span>{" "}
             Kuncinya sampai ke sini lewat bagian alamat yang ikut terkirim ke
             server, bukan bagian setelah tanda #. Statusnya masih bisa
-            ditampilkan, tapi kerahasiaannya sudah tidak utuh — mintalah tautan
+            ditampilkan, tapi kerahasiaannya sudah tidak utuh. Mintalah tautan
             baru, dan buka langsung dari pesan aslinya.
           </p>
         </div>
@@ -184,8 +184,8 @@ export default function SharedStatusPage() {
 
         <p className="m-0 max-w-[270px] text-[14.5px]/[1.6] text-balance text-tx2">
           {haid
-            ? "Shalat dan puasanya sedang libur. Doakan dan temani saja — itu sudah banyak artinya."
-            : "Shalat dan puasanya berjalan seperti biasa. Doakan dan temani saja — itu sudah banyak artinya."}
+            ? "Shalat dan puasanya sedang libur. Doakan dan temani saja, itu sudah banyak artinya."
+            : "Shalat dan puasanya berjalan seperti biasa. Doakan dan temani saja, itu sudah banyak artinya."}
         </p>
 
         <button
@@ -209,7 +209,7 @@ export default function SharedStatusPage() {
           </IconBubble>
           <span className="text-[12.5px]/[1.5] text-tx2">
             Halaman ini hanya menampilkan status hari ini. Tidak ada tanggal,
-            catatan, atau riwayat. Isinya terkunci — server yang meneruskannya
+            catatan, atau riwayat. Isinya terkunci: server yang meneruskannya
             pun tidak bisa membacanya.
           </span>
         </div>
@@ -232,7 +232,7 @@ export default function SharedStatusPage() {
         </button>
         <p className="m-0 text-center text-[11.5px]/[1.5] text-tx2">
           Supaya bisa dibuka lagi tanpa tautan penuh, kuncinya disimpan di
-          peramban ini. Menutup tab tidak menghapusnya — tombol di atas yang
+          peramban ini. Menutup tab tidak menghapusnya. Tombol di atas yang
           menghapusnya.
         </p>
       </div>

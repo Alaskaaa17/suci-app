@@ -121,7 +121,7 @@ export const MADHHABS: Record<MadhhabId, MadhhabRules> = {
     haidCitation: {
       work: "Al-Majmu' Syarh al-Muhadzdzab",
       locus: "jld. 2, hlm. 381",
-      note: "Bab Haid — batas minimal sehari semalam, maksimal 15 hari.",
+      note: "Bab Haid, batas minimal sehari semalam, maksimal 15 hari.",
     },
     nifasCitation: {
       work: "Bidayatul Mujtahid",
@@ -176,14 +176,14 @@ export const MADHHABS: Record<MadhhabId, MadhhabRules> = {
     haidCitation: {
       work: "Al-Mudawwanah al-Kubra",
       locus: "jld. 1",
-      note: "Tidak ada batas minimal — setetes pun sudah dihitung.",
+      note: "Tidak ada batas minimal, setetes pun sudah dihitung.",
     },
     nifasCitation: {
       work: "Bidayatul Mujtahid",
       locus: "Bab Haid dan Nifas",
     },
     haidDetail:
-      "Tidak ada batas minimal — setetes pun sudah dihitung. Maksimal mengikuti kebiasaan, hingga 15 hari.",
+      "Tidak ada batas minimal, setetes pun sudah dihitung. Maksimal mengikuti kebiasaan, hingga 15 hari.",
     nursingRule: "Khawatir pada bayi → qadha ditambah fidyah.",
   },
 
@@ -240,7 +240,7 @@ export function haidRangeLabel(rules: MadhhabRules): string {
 export const CONSENSUS = {
   prayerNotMadeUp: {
     claim:
-      "Shalat yang ditinggalkan karena haid tidak diqadha — empat mazhab sepakat. Yang diqadha hanyalah shalat yang terlewat di masa suci.",
+      "Shalat yang ditinggalkan karena haid tidak diqadha, empat mazhab sepakat. Yang diqadha hanyalah shalat yang terlewat di masa suci.",
     citation: {
       work: "Sahih Muslim",
       locus: "no. 335",

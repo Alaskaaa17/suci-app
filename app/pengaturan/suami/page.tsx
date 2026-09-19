@@ -195,7 +195,7 @@ export default function ModeSuamiPage() {
               Yang perlu dilakukan sekali: sambungkan penyimpanan di Vercel
               (Storage → Upstash Redis, atau Edge Config), isi variabel
               lingkungannya, lalu Redeploy. Kalau sudah, buka{" "}
-              <code className="font-semibold text-tx">/api/share</code> — ia
+              <code className="font-semibold text-tx">/api/share</code>, ia
               harus menjawab{" "}
               <code className="font-semibold text-tx">durable: true</code>.
             </span>
@@ -276,7 +276,7 @@ export default function ModeSuamiPage() {
                 . Berubah sendiri begitu statusmu berubah.
               </>
             ) : (
-              "Tautannya baru dibuat dan belum sampai ke server. Tunggu sebentar sebelum membagikannya — kalau dibuka terlalu cepat, halamannya masih kosong."
+              "Tautannya baru dibuat dan belum sampai ke server. Tunggu sebentar sebelum membagikannya, kalau dibuka terlalu cepat, halamannya masih kosong."
             )}
           </p>
 
@@ -313,7 +313,7 @@ export default function ModeSuamiPage() {
         <p className="mt-1.5 mb-0 text-[12px]/[1.55] text-tx2">
           Statusmu dikunci dulu di ponsel ini sebelum dikirim. Yang sampai ke
           server cuma tulisan acak yang <span className="font-semibold text-tx">tidak
-          bisa dibacanya</span> — kuncinya ada di bagian tautan setelah tanda{" "}
+          bisa dibacanya</span>, kuncinya ada di bagian tautan setelah tanda{" "}
           <code className="font-semibold text-tx">#</code>, dan bagian itu tidak
           pernah dikirim peramban ke server mana pun. Yang bisa membukanya hanya
           orang yang kamu beri tautannya.
@@ -336,9 +336,9 @@ export default function ModeSuamiPage() {
         </h3>
         <ul className="mt-2 mb-0 flex list-none flex-col gap-2 p-0">
           {[
-            "Isinya terkunci, tapi waktu setiap pembaruan tercatat di server. Pola kapan dan seberapa sering statusmu berubah masih bisa terlihat oleh penyedia servernya — dan pola itu sendiri menggambarkan siklus. Enkripsi tidak menutupi hal ini.",
+            "Isinya terkunci, tapi waktu setiap pembaruan tercatat di server. Pola kapan dan seberapa sering statusmu berubah masih bisa terlihat oleh penyedia servernya, dan pola itu sendiri menggambarkan siklus. Enkripsi tidak menutupi hal ini.",
             "Siapa pun yang memegang tautan utuhnya bisa membaca statusmu, termasuk kalau tautan itu diteruskan ke orang lain. Yang menjaganya adalah kerahasiaan tautan itu, bukan kata sandi atau akun.",
-            "Mengubah atau menghapus statusmu tidak bisa dilakukan hanya dengan memegang tautan — itu perlu kunci tulis yang tidak pernah keluar dari ponsel ini.",
+            "Mengubah atau menghapus statusmu tidak bisa dilakukan hanya dengan memegang tautan. Itu perlu kunci tulis yang tidak pernah keluar dari ponsel ini.",
             "Di ponsel penerima, kuncinya ikut tersimpan supaya tautannya bisa dibuka lagi. Halaman itu menyediakan tombol untuk menghapusnya.",
           ].map((line) => (
             <li

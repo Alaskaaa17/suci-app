@@ -90,7 +90,7 @@ export default function KehamilanPage() {
       </section>
 
       <section className="flex flex-col gap-2.5 rounded-[20px] border border-stone-b bg-stone-card p-4">
-        <div className="t-label text-stone-tx2">Darah saat hamil — ikhtilaf</div>
+        <div className="t-label text-stone-tx2">Darah saat hamil, ikhtilaf</div>
         <p className="m-0 text-[12.5px]/[1.65] text-stone-tx2">
           <span className="font-semibold text-stone-tx">
             Syafi&apos;i &amp; Maliki:

@@ -97,8 +97,8 @@ export default function BerandaPage() {
           title="Kehamilan"
           subtitle={
             profile.specialState === "hamil"
-              ? "Aktif — lihat usia kehamilan"
-              : "Nonaktif — nyalakan bila perlu"
+              ? "Aktif, lihat usia kehamilan"
+              : "Nonaktif, nyalakan bila perlu"
           }
         />
       </div>

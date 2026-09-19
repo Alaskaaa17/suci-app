@@ -228,7 +228,7 @@ export default function OnboardingPage() {
 
         <div className="mt-auto flex flex-col gap-3 pt-4">
           <p className="m-0 text-center text-[12.5px]/[1.55] text-tx2">
-            Belum yakin? Pilih Syafi&apos;i dulu — kami akan tampilkan pendapat
+            Belum yakin? Pilih Syafi&apos;i dulu, kami akan tampilkan pendapat
             mazhab lain di setiap kesimpulan.
           </p>
           <PrimaryButton onClick={() => setStep(3)}>Lanjut</PrimaryButton>
@@ -258,8 +258,9 @@ export default function OnboardingPage() {
         </p>
         {restoredVault && (
           <p className="m-0 max-w-[290px] text-center text-[12.5px]/[1.5] text-sage-tx">
-            Memulihkan cadangan atas nama {restoredVault.profile.name || "kamu"}{" "}
-            — {Object.keys(restoredVault.entries).length} catatan harian.
+            Memulihkan cadangan atas nama{" "}
+            {restoredVault.profile.name || "kamu"},{" "}
+            {Object.keys(restoredVault.entries).length} catatan harian.
             Kuncinya dipasang ulang dengan PIN yang kamu buat sekarang.
           </p>
         )}

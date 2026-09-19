@@ -46,7 +46,7 @@ export default function AmalanPage() {
             {done.length} dari {AMALAN.length}
           </span>{" "}
           {done.length === 0
-            ? "amalan tercatat hari ini. Tidak apa-apa — mulai dari satu."
+            ? "amalan tercatat hari ini. Tidak apa-apa, mulai dari satu."
             : "amalan sudah kamu lakukan hari ini."}
         </p>
       </div>
@@ -77,7 +77,7 @@ export default function AmalanPage() {
               <span className="mt-[7px] block rounded-[10px] bg-stone-bg px-2.5 py-2 text-[11.5px]/[1.45] text-stone-tx2">
                 {a.citation
                   ? `${a.citation.work}${a.citation.locus ? `, ${a.citation.locus}` : ""}${
-                      a.citation.note ? ` — ${a.citation.note}` : ""
+                      a.citation.note ? `, ${a.citation.note}` : ""
                     }`
                   : a.note}
               </span>

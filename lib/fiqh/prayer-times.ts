@@ -247,7 +247,7 @@ export function computePrayerTimes({
       name,
       label: LABELS[name],
       minutes,
-      time: Number.isNaN(minutes) ? "—" : formatClock(minutes),
+      time: Number.isNaN(minutes) ? "-" : formatClock(minutes),
       isPrayer,
     };
   });

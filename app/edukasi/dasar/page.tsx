@@ -13,8 +13,8 @@ import { useApp } from "@/lib/store/app-store";
  */
 
 const PAUSED = [
-  "Shalat lima waktu — dan tidak diqadha",
-  "Puasa Ramadan — diqadha nanti",
+  "Shalat lima waktu, dan tidak diqadha",
+  "Puasa Ramadan, diqadha nanti",
   "Thawaf di Ka'bah",
 ];
 
@@ -35,7 +35,7 @@ const BLOOD_COLORS = [
   {
     name: "Merah",
     swatch: "#9E2B2B",
-    note: "Warna yang paling banyak dialami — ada yang merah pekat, ada yang merah hati.",
+    note: "Warna yang paling banyak dialami, ada yang merah pekat, ada yang merah hati.",
   },
   {
     name: "Coklat",
@@ -45,7 +45,7 @@ const BLOOD_COLORS = [
   {
     name: "Kuning",
     swatch: "#C99A3B",
-    note: "Sering dikira tanda sudah suci — padahal belum, selama warnanya belum putih bersih.",
+    note: "Sering dikira tanda sudah suci, padahal belum, selama warnanya belum putih bersih.",
   },
   {
     name: "Keruh",
@@ -75,7 +75,7 @@ export default function DasarPage() {
           Haid bukan kekurangan
         </h2>
         <p className="mt-2 mb-0 text-[13.5px]/[1.6] text-tx2">
-          Libur shalat saat haid adalah <strong>rukhsah</strong> — keringanan
+          Libur shalat saat haid adalah <strong>rukhsah</strong>, keringanan
           yang diberikan, bukan hukuman atau tanda kurangnya iman. Kamu tidak
           sedang tertinggal dari siapa pun.
         </p>
@@ -135,7 +135,7 @@ export default function DasarPage() {
         <div className="rounded-2xl bg-rose px-[15px] py-3.5">
           <p className="m-0 text-[12.5px]/[1.6] font-medium text-tx">
             Suci baru terjadi kalau cairan yang keluar sudah bersih, putih
-            seperti kapas atau tisu — bukan kuning atau keruh.
+            seperti kapas atau tisu, bukan kuning atau keruh.
           </p>
         </div>
         <CitationCard

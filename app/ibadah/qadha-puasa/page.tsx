@@ -31,7 +31,7 @@ export default function QadhaPuasaPage() {
       <div>
         <h1 className="t-headline m-0 text-tx">Qadha puasa Ramadan</h1>
         <p className="mt-1.5 mb-0 text-[13.5px]/[1.55] text-tx2">
-          Untuk hari puasa Ramadan yang terlewat karena haid — beda dari
+          Untuk hari puasa Ramadan yang terlewat karena haid, beda dari
           shalat, ini wajib diganti.
         </p>
       </div>

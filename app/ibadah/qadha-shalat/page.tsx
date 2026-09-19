@@ -42,7 +42,7 @@ export default function QadhaShalatPage() {
       <div>
         <h1 className="t-headline m-0 text-tx">Qadha shalat</h1>
         <p className="mt-1.5 mb-0 text-[13.5px]/[1.55] text-tx2">
-          Untuk shalat yang terlewat bukan karena haid — misalnya tertidur atau
+          Untuk shalat yang terlewat bukan karena haid, misalnya tertidur atau
           lupa.
         </p>
       </div>
@@ -51,7 +51,7 @@ export default function QadhaShalatPage() {
         <div className="t-label text-stone-tx2">Dasar hukum</div>
         <p className="m-0 text-[13px]/[1.65] text-stone-tx2">
           Shalat yang ditinggalkan karena haid{" "}
-          <span className="font-semibold text-stone-tx">tidak diqadha</span> —
+          <span className="font-semibold text-stone-tx">tidak diqadha</span>,
           empat mazhab sepakat. Yang diqadha hanyalah shalat yang terlewat di
           masa suci.
         </p>
@@ -200,7 +200,7 @@ export default function QadhaShalatPage() {
                     {q.slot} · {q.count}×
                   </span>
                   <span className="block text-[12.5px]/[1.4] text-tx2">
-                    Dilunasi {q.settledOn ? formatMedium(q.settledOn) : "—"}
+                    Dilunasi {q.settledOn ? formatMedium(q.settledOn) : "-"}
                   </span>
                 </span>
               </div>
