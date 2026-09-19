@@ -1,9 +1,8 @@
 "use client";
 
 import { Screen } from "@/components/shell";
-import { InfoDotIcon, WarningIcon } from "@/components/icons";
+import { CheckIcon, CloseIcon, InfoDotIcon } from "@/components/icons";
 import {
-  Advisory,
   BackLink,
   CitationCard,
   IconBubble,
@@ -14,19 +13,34 @@ import { useApp } from "@/lib/store/app-store";
 const MUSTAHADHAH_STATES = [
   {
     n: 1,
-    title: "Sudah punya kebiasaan",
-    body: "Pakai lama haid yang biasa kamu alami sebelum darah terus-menerus ini muncul. Sisanya dihukumi istihadhah.",
+    title: "Bisa membedakan ciri darah (tamyiz)",
+    body: "Baik baru pertama kali atau sudah punya kebiasaan: darah yang lebih kuat (hitam pekat, kental, berbau) dihukumi haid, asal tidak kurang dari 24 jam dan tidak lebih dari batas maksimal haid mazhabmu. Darah yang lebih lemah dihukumi istihadhah.",
   },
   {
     n: 2,
-    title: "Bisa membedakan ciri darah (tamyiz)",
-    body: "Belum punya kebiasaan, tapi darahnya punya ciri yang beda-beda. Darah yang lebih kuat (hitam pekat, kental, berbau) dihukumi haid; sisanya istihadhah.",
+    title: "Sudah punya kebiasaan, tapi tidak bisa membedakan ciri darah",
+    body: "Masa haid dan sucinya dikembalikan ke kebiasaan lama, dari sebelum darah ini keluar terus-menerus.",
   },
   {
     n: 3,
-    title: "Tidak punya kebiasaan dan tidak bisa membedakan",
-    body: "Dihukumi haid mengikuti kebiasaan umum perempuan: 6-7 hari tiap bulan sejak darah pertama kali keluar. Sisanya istihadhah.",
+    title: "Baru pertama kali, dan tidak bisa membedakan ciri darah",
+    body: "Dihukumi haid hanya 1 hari 1 malam pertama sejak darah keluar. Sisanya dihukumi istihadhah, sampai kebiasaan barunya terbentuk.",
   },
+];
+
+const MUTAHAYYIRAH_LIKE_HAID = [
+  "Bersenang-senang (suami-istri) antara pusar dan lutut",
+  "Membaca Al-Qur'an di luar shalat",
+  "Menyentuh dan membawa mushaf",
+  "Diam atau lewat di dalam masjid",
+];
+
+const MUTAHAYYIRAH_LIKE_SUCI = [
+  "Shalat",
+  "Puasa",
+  "Thawaf",
+  "Mandi wajib",
+  "Boleh dithalak suami",
 ];
 
 const STEPS = [
@@ -123,9 +137,9 @@ export default function IstihadhahPage() {
           </div>
         ))}
         <CitationCard
-          work="Al-Fiqh al-Islami wa Adillatuhu, Wahbah az-Zuhaili"
-          locus="Juz 1, Bab Haid: Istihadhah dan Hukumnya, pembahasan penentuan masa haid bagi mustahadhah"
-          note="Kondisi 1 dan 3 berdasar hadits riwayat Abu Dawud dan Tirmidzi (Hamnah binti Jahsy); kondisi 2 berdasar hadits riwayat Bukhari-Muslim (Fatimah binti Abi Hubaisy)."
+          work="Al-Ibanah wal Ifadhah fi Ahkamil Haidh wan Nifas wal Istihadhah, Sayyid Abdurrahman as-Saqaf"
+          locus="hlm. 63-76, merujuk Nihayatul Muhtaj ila Syarhil Minhaj karya Syamsuddin ar-Ramli"
+          note="Istilah fiqihnya: kondisi 1 disebut mumayyizah, kondisi 2 mu'tadah ghairu mumayyizah, kondisi 3 mubtada'ah ghairu mumayyizah."
         />
       </section>
 
@@ -180,11 +194,62 @@ export default function IstihadhahPage() {
         </p>
       </section>
 
-      <Advisory icon={<WarningIcon size={15} />}>
-        Memisahkan hari haid dari istihadhah pada pendarahan panjang memerlukan
-        tamyiz dan kebiasaanmu sendiri. Suci berhenti pada kasus seperti itu dan
-        menyarankanmu bertanya pada ulama. Bawa saja catatan tanggalmu.
-      </Advisory>
+      <section className="flex flex-col gap-3 rounded-[20px] border border-stone-b bg-stone-card p-4">
+        <div>
+          <div className="t-label text-stone-tx2">
+            Kalau lupa kebiasaan (mutahayyirah)
+          </div>
+          <p className="mt-1.5 mb-0 text-[12.5px]/[1.65] text-stone-tx2">
+            Kasus paling rumit: sudah pernah haid dan suci, tapi lupa
+            kebiasaannya dan tidak bisa membedakan ciri darah. Karena tidak
+            bisa dipastikan haid atau istihadhah, sikapnya adalah{" "}
+            <strong>ihtiyath</strong> (hati-hati) — mengikuti aturan yang
+            lebih ketat dari keduanya sekaligus.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <p className="m-0 text-[11px] font-semibold tracking-[.06em] text-stone-tx uppercase">
+            Dilarang, seperti wanita haid
+          </p>
+          {MUTAHAYYIRAH_LIKE_HAID.map((item) => (
+            <div key={item} className="flex items-center gap-2">
+              <IconBubble tone="rose" size={22} className="bg-bg">
+                <CloseIcon size={11} />
+              </IconBubble>
+              <span className="text-[12.5px]/[1.4] text-stone-tx2">
+                {item}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <p className="m-0 text-[11px] font-semibold tracking-[.06em] text-stone-tx uppercase">
+            Tetap wajib, seperti wanita suci
+          </p>
+          {MUTAHAYYIRAH_LIKE_SUCI.map((item) => (
+            <div key={item} className="flex items-center gap-2">
+              <IconBubble tone="sage" size={22} className="bg-bg">
+                <CheckIcon size={11} strokeWidth={2.4} />
+              </IconBubble>
+              <span className="text-[12.5px]/[1.4] text-stone-tx2">
+                {item}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <p className="m-0 text-[12px]/[1.55] text-stone-tx2">
+          Kasus ini paling baik dibawa langsung ke ulama yang kamu percaya.
+          Bawa catatan tanggalmu supaya lebih mudah dibantu.
+        </p>
+
+        <CitationCard
+          work="Al-Ibanah wal Ifadhah fi Ahkamil Haidh wan Nifas wal Istihadhah, Sayyid Abdurrahman as-Saqaf"
+          locus="hlm. 77"
+        />
+      </section>
     </Screen>
   );
 }
