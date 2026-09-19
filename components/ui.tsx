@@ -294,7 +294,7 @@ export function CheckRow({
           {title}
         </span>
         {description && (
-          <span className="mt-0.5 block text-[12.5px]/[1.5] text-tx2">
+          <span className="mt-0.5 block text-justify text-pretty text-[12.5px]/[1.5] text-tx2">
             {description}
           </span>
         )}
@@ -488,7 +488,7 @@ export function RadioCard({
           )}
         </span>
         {description && (
-          <span className="mt-1 block text-[13px]/[1.55] text-tx2">
+          <span className="mt-1 block text-justify text-pretty text-[13px]/[1.55] text-tx2">
             {description}
           </span>
         )}

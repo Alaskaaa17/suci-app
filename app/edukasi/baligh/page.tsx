@@ -82,7 +82,7 @@ export default function BalighPage() {
               <span className="block text-[14.5px]/[1.3] font-semibold text-tx">
                 {p.title}
               </span>
-              <span className="mt-0.5 block text-[12.5px]/[1.55] text-tx2">
+              <span className="mt-0.5 block text-justify text-pretty text-[12.5px]/[1.55] text-tx2">
                 {p.body}
               </span>
             </span>

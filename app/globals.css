@@ -132,10 +132,14 @@
      line captions and labels are unaffected — justify only acts on wrapped
      lines. `.arabic` sets its own `text-align: right`, and the utilities
      layer outranks base regardless of source order, so that still wins here.
-     Long descriptions are as often a `<span className="block">` as a `<p>`
-     in this codebase — matching `.block` too catches those the same way. */
-  p,
-  span.block {
+
+     This used to also match `span.block`, since long descriptions are as
+     often a span as a `<p>` in this codebase. That caught row captions too
+     (title + subtitle stacked next to an icon and a chevron) — squeezed to
+     two or three words a line, justify stretched the one gap on a two-word
+     line into a canyon. Real paragraphs opt in per element with Tailwind's
+     `text-justify`, which only ends up on the ones wide enough to want it. */
+  p {
     text-align: justify;
     text-wrap: pretty;
   }

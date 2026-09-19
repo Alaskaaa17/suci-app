@@ -130,7 +130,7 @@ export default function IstihadhahPage() {
               <span className="block text-[14px]/[1.3] font-semibold text-tx">
                 {s.title}
               </span>
-              <span className="mt-0.5 block text-[12.5px]/[1.55] text-tx2">
+              <span className="mt-0.5 block text-justify text-pretty text-[12.5px]/[1.55] text-tx2">
                 {s.body}
               </span>
             </span>
@@ -156,7 +156,7 @@ export default function IstihadhahPage() {
               <span className="block text-[14px]/[1.3] font-semibold text-tx">
                 {s.title}
               </span>
-              <span className="mt-0.5 block text-[12.5px]/[1.55] text-tx2">
+              <span className="mt-0.5 block text-justify text-pretty text-[12.5px]/[1.55] text-tx2">
                 {s.body}
               </span>
             </span>

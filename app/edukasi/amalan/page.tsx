@@ -69,7 +69,7 @@ export default function AmalanPage() {
               </span>
             )}
             {a.transliteration && (
-              <span className="mt-1 block text-[12px]/[1.5] text-tx2 italic">
+              <span className="mt-1 block text-justify text-pretty text-[12px]/[1.5] text-tx2 italic">
                 {a.transliteration}
               </span>
             )}

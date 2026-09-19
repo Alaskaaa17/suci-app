@@ -180,7 +180,7 @@ export default function ModeSuamiPage() {
             <span className="block text-[13.5px]/[1.3] font-semibold text-tx">
               Tautan belum bisa diandalkan
             </span>
-            <span className="mt-1 block text-[12px]/[1.5] text-tx2">
+            <span className="mt-1 block text-justify text-pretty text-[12px]/[1.5] text-tx2">
               Server tempat Suci dipasang belum punya penyimpanan status yang
               tetap, jadi tautan yang kamu bagikan akan terbuka kosong di
               ponselnya. Catatanmu sendiri tetap aman di ponsel ini.
@@ -191,7 +191,7 @@ export default function ModeSuamiPage() {
               go looking for. Vague advice on a screen like this is how the
               last three days were spent.
             */}
-            <span className="mt-2 block text-[11.5px]/[1.5] text-tx2">
+            <span className="mt-2 block text-justify text-pretty text-[11.5px]/[1.5] text-tx2">
               Yang perlu dilakukan sekali: sambungkan penyimpanan di Vercel
               (Storage → Upstash Redis, atau Edge Config), isi variabel
               lingkungannya, lalu Redeploy. Kalau sudah, buka{" "}

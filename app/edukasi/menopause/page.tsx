@@ -83,7 +83,7 @@ export default function MenopausePage() {
             <span className="block text-[14.5px]/[1.3] font-semibold text-tx">
               Shalat dan puasa tanpa jeda
             </span>
-            <span className="mt-0.5 block text-[12.5px]/[1.55] text-tx2">
+            <span className="mt-0.5 block text-justify text-pretty text-[12.5px]/[1.55] text-tx2">
               Tidak ada lagi hari libur wajib. Pelacakan siklus dinonaktifkan
               otomatis.
             </span>
@@ -98,7 +98,7 @@ export default function MenopausePage() {
             <span className="block text-[14.5px]/[1.3] font-semibold text-tx">
               Kalau darah muncul lagi
             </span>
-            <span className="mt-0.5 block text-[12.5px]/[1.55] text-tx2">
+            <span className="mt-0.5 block text-justify text-pretty text-[12.5px]/[1.55] text-tx2">
               Catat saja di aplikasi. Selama Mode Menopause aktif, darah itu
               dihukumi istihadhah dan ibadah tetap berjalan.
             </span>
