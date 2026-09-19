@@ -184,14 +184,14 @@ export const GLOSSARY: GlossaryTerm[] = [
     arabic: "صُفْرَة",
     category: "darah",
     definition:
-      "Cairan kekuningan. Dihitung haid bila muncul sebelum masa suci, tidak dihitung haid bila muncul setelah masa suci.",
+      "Cairan kekuningan. Sebagian mazhab menghitungnya sebagai haid bila muncul dalam masa kebiasaan.",
   },
   {
     term: "Kudrah",
     arabic: "كُدْرَة",
     category: "darah",
     definition:
-      "Cairan keruh kecoklatan. Aturannya sama seperti sufrah: sebelum suci dihitung haid, sesudah suci tidak.",
+      "Cairan keruh kecoklatan. Hukumnya diperselisihkan sama seperti sufrah.",
   },
   {
     term: "Junub",
