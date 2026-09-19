@@ -131,8 +131,11 @@
      pretty` keeps the last line from stranding a single short word. Single-
      line captions and labels are unaffected — justify only acts on wrapped
      lines. `.arabic` sets its own `text-align: right`, and the utilities
-     layer outranks base regardless of source order, so that still wins here. */
-  p {
+     layer outranks base regardless of source order, so that still wins here.
+     Long descriptions are as often a `<span className="block">` as a `<p>`
+     in this codebase — matching `.block` too catches those the same way. */
+  p,
+  span.block {
     text-align: justify;
     text-wrap: pretty;
   }
