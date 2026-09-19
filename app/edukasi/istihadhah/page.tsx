@@ -11,6 +11,24 @@ import {
 import { MADHHABS } from "@/lib/fiqh/madhhab";
 import { useApp } from "@/lib/store/app-store";
 
+const MUSTAHADHAH_STATES = [
+  {
+    n: 1,
+    title: "Sudah punya kebiasaan",
+    body: "Pakai lama haid yang biasa kamu alami sebelum darah terus-menerus ini muncul. Sisanya dihukumi istihadhah.",
+  },
+  {
+    n: 2,
+    title: "Bisa membedakan ciri darah (tamyiz)",
+    body: "Belum punya kebiasaan, tapi darahnya punya ciri yang beda-beda. Darah yang lebih kuat (hitam pekat, kental, berbau) dihukumi haid; sisanya istihadhah.",
+  },
+  {
+    n: 3,
+    title: "Tidak punya kebiasaan dan tidak bisa membedakan",
+    body: "Dihukumi haid mengikuti kebiasaan umum perempuan: 6-7 hari tiap bulan sejak darah pertama kali keluar. Sisanya istihadhah.",
+  },
+];
+
 const STEPS = [
   {
     n: 1,
@@ -77,6 +95,38 @@ export default function IstihadhahPage() {
             <li>Keluar saat hamil, menurut mazhab {rules.name}.</li>
           )}
         </ul>
+      </section>
+
+      <section className="flex flex-col gap-3 rounded-[20px] border border-hair p-4">
+        <div>
+          <h2 className="m-0 text-[15.5px]/[1.3] font-semibold text-tx">
+            Tiga kondisi mustahadhah
+          </h2>
+          <p className="mt-1 mb-0 text-[12.5px]/[1.55] text-tx2">
+            Kalau darah tidak pernah berhenti, cara memisahkan haid dari
+            istihadhah bergantung pada kondisi mana yang kamu alami.
+          </p>
+        </div>
+        {MUSTAHADHAH_STATES.map((s) => (
+          <div key={s.n} className="flex items-start gap-3">
+            <IconBubble tone="peach" size={28}>
+              <span className="text-xs/[1] font-bold">{s.n}</span>
+            </IconBubble>
+            <span>
+              <span className="block text-[14px]/[1.3] font-semibold text-tx">
+                {s.title}
+              </span>
+              <span className="mt-0.5 block text-[12.5px]/[1.55] text-tx2">
+                {s.body}
+              </span>
+            </span>
+          </div>
+        ))}
+        <CitationCard
+          work="Al-Fiqh al-Islami wa Adillatuhu, Wahbah az-Zuhaili"
+          locus="Juz 1, Bab Haid: Istihadhah dan Hukumnya, pembahasan penentuan masa haid bagi mustahadhah"
+          note="Kondisi 1 dan 3 berdasar hadits riwayat Abu Dawud dan Tirmidzi (Hamnah binti Jahsy); kondisi 2 berdasar hadits riwayat Bukhari-Muslim (Fatimah binti Abi Hubaisy)."
+        />
       </section>
 
       <section className="flex flex-col gap-2.5 rounded-[20px] border border-hair p-4">

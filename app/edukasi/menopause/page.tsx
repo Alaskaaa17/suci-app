@@ -5,11 +5,19 @@ import { Screen } from "@/components/shell";
 import { CheckIcon, WavesIcon } from "@/components/icons";
 import {
   BackLink,
+  CitationCard,
   IconBubble,
   PrimaryButton,
   SecondaryButton,
 } from "@/components/ui";
 import { useApp } from "@/lib/store/app-store";
+
+const MENOPAUSE_AGE = [
+  { madhhab: "Hanafi", age: "55 tahun" },
+  { madhhab: "Maliki", age: "70 tahun" },
+  { madhhab: "Syafi'i", age: "tidak ada batas baku, ghalibnya 62 tahun" },
+  { madhhab: "Hanbali", age: "50 tahun" },
+];
 
 export default function MenopausePage() {
   const router = useRouter();
@@ -105,12 +113,20 @@ export default function MenopausePage() {
           keluar setelahnya dihukumi istihadhah, sehingga ibadah tetap
           dijalankan dengan tata cara istihadhah.
         </p>
-        <p className="m-0 rounded-xl bg-stone-bg px-[13px] py-[11px] text-[12px]/[1.55] text-stone-tx2">
-          <span className="font-semibold text-stone-tx">Hanafi:</span> usia
-          sekitar 55 tahun sebagai patokan.{" "}
-          <span className="font-semibold text-stone-tx">Syafi&apos;i:</span>{" "}
-          tidak ada batas usia baku, dilihat kondisi masing-masing.
-        </p>
+        <ul className="m-0 flex list-none flex-col gap-1.5 rounded-xl bg-stone-bg p-0 px-[13px] py-[11px] text-[12px]/[1.55] text-stone-tx2">
+          {MENOPAUSE_AGE.map((m) => (
+            <li key={m.madhhab}>
+              <span className="font-semibold text-stone-tx">
+                {m.madhhab}:
+              </span>{" "}
+              {m.age}.
+            </li>
+          ))}
+        </ul>
+        <CitationCard
+          work="Al-Fiqh al-Islami wa Adillatuhu, Wahbah az-Zuhaili"
+          locus="Juz 1, Bab Haid, pembahasan usia haid dan sinn al-ya's (usia menopause)"
+        />
       </section>
 
       <div className="mt-auto pt-3 pb-5">

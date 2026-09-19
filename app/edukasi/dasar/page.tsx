@@ -54,6 +54,13 @@ const BLOOD_COLORS = [
   },
 ];
 
+const HAID_RULINGS = [
+  "Mewajibkan mandi wajib setelah darah berhenti.",
+  "Menjadi tanda baligh, awal mula seluruh kewajiban syariat berlaku.",
+  "Jadi tanda rahim tidak sedang mengandung (bara'ah rahim).",
+  "Jadi dasar hitungan iddah bagi perempuan yang dicerai.",
+];
+
 export default function DasarPage() {
   const { data } = useApp();
   const rules = MADHHABS[data?.profile.madhhab ?? "syafii"];
@@ -141,6 +148,25 @@ export default function DasarPage() {
         <CitationCard
           work="Risalatul Mahid"
           note="Disusun berdasarkan dalil dan pengamatan langsung pada ratusan perempuan dari berbagai daerah dan latar ekonomi."
+        />
+      </section>
+
+      <section className="flex flex-col gap-2.5 rounded-[20px] border border-stone-b bg-stone-card p-4">
+        <div className="t-label text-stone-tx2">
+          Lima hukum yang berlaku karena haid
+        </div>
+        <ul className="m-0 flex list-none flex-col gap-1.5 p-0 text-[12.5px]/[1.65] text-stone-tx2">
+          {HAID_RULINGS.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+          <li>
+            Jadi dasar kafarat bagi suami yang menggauli istri saat haid,
+            menurut mazhab Hanbali.
+          </li>
+        </ul>
+        <CitationCard
+          work="Al-Fiqh al-Islami wa Adillatuhu, Wahbah az-Zuhaili"
+          locus="Juz 1, Bab Haid: Hukum-hukum Haid dan Nifas"
         />
       </section>
 

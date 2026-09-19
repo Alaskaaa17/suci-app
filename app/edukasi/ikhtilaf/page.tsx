@@ -7,6 +7,7 @@ import {
   haidRangeLabel,
   MADHHAB_ORDER,
   MADHHABS,
+  type MadhhabId,
   type MadhhabRules,
 } from "@/lib/fiqh/madhhab";
 import { useApp } from "@/lib/store/app-store";
@@ -17,7 +18,32 @@ import { useApp } from "@/lib/store/app-store";
  * on this page and in the user's actual ruling at the same time.
  */
 
-type Topic = "haid" | "nifas" | "hamil" | "kuning";
+type Topic = "haid" | "nifas" | "hamil" | "kuning" | "usia";
+
+/**
+ * Not tracked in madhhab.ts since nothing in the app calculates from it —
+ * shown here only as a comparison. Source: Al-Fiqh al-Islami wa Adillatuhu,
+ * Wahbah az-Zuhaili, Juz 1, Bab Haid, pembahasan sinn al-ya's.
+ */
+const MENOPAUSE_AGE: Record<MadhhabId, { headline: string; detail: string }> = {
+  hanafi: {
+    headline: "55 tahun",
+    detail: "Dipatok pada usia 55 tahun sebagai batas menopause.",
+  },
+  maliki: {
+    headline: "70 tahun",
+    detail: "Dipatok pada usia 70 tahun sebagai batas menopause.",
+  },
+  syafii: {
+    headline: "Tidak dibatasi",
+    detail:
+      "Tidak ada batas usia baku selama masih hidup haid tetap mungkin terjadi, tapi ghalibnya berhenti sekitar usia 62 tahun.",
+  },
+  hanbali: {
+    headline: "50 tahun",
+    detail: "Dipatok pada usia 50 tahun sebagai batas menopause.",
+  },
+};
 
 const TOPICS: Array<{
   id: Topic;
@@ -74,6 +100,17 @@ const TOPICS: Array<{
         ? "Masih dihitung haid selama muncul dalam masa kebiasaan haid."
         : "Tidak dihitung haid; hari itu dihukumi suci dan ibadah kembali berjalan.",
     citation: (r) => `${r.haidCitation.work}, ${r.haidCitation.locus}`,
+  },
+  {
+    id: "usia",
+    label: "Usia menopause",
+    title: "Batas usia menopause",
+    intro:
+      "Bukan batas yang dihitung aplikasi ini, hanya perbandingan pendapat mazhab soal usia berhentinya haid.",
+    value: (r) => ({ headline: MENOPAUSE_AGE[r.id].headline }),
+    detail: (r) => MENOPAUSE_AGE[r.id].detail,
+    citation: () =>
+      "Al-Fiqh al-Islami wa Adillatuhu, Wahbah az-Zuhaili, Juz 1, Bab Haid",
   },
 ];
 
