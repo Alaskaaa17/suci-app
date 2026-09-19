@@ -17,7 +17,7 @@
  * Bump CACHE_VERSION on any change here; the old cache is dropped on activate.
  */
 
-const CACHE_VERSION = "suci-v7";
+const CACHE_VERSION = "suci-v9";
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const ASSET_CACHE = `${CACHE_VERSION}-assets`;
 const RSC_CACHE = `${CACHE_VERSION}-rsc`;
