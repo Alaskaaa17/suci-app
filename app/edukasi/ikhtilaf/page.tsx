@@ -161,6 +161,23 @@ export default function IkhtilafPage() {
         })}
       </div>
 
+      {topic === "haid" && (
+        <div className="rounded-2xl border border-hair bg-bg px-4 py-3.5">
+          <p className="m-0 text-[12.5px]/[1.6] font-semibold text-stone-tx">
+            Pendapat lain: tanpa batas hari
+          </p>
+          <p className="mt-1.5 mb-0 text-[12px]/[1.55] text-stone-tx2">
+            Syaikhul Islam Ibnu Taimiyyah berpendapat haid tidak punya batas
+            hari minimal maupun maksimal sama sekali. Berapa pun lamanya,
+            selama itu darah asli dan bukan karena luka atau penyakit, tetap
+            dihukumi haid. Alasannya, Al-Qur&apos;an dan hadits mengaitkan hukum
+            haid pada keberadaan darahnya, bukan pada hitungan hari tertentu.
+            Pendapat ini di luar kerangka empat mazhab di atas. Suci tetap
+            memakai kerangka empat mazhab sebagai dasar perhitungan.
+          </p>
+        </div>
+      )}
+
       <p className="m-0 pb-5 text-[12px]/[1.6] text-stone-tx2">
         Angka di halaman ini adalah angka yang sama yang dipakai aplikasi untuk
         menghitung statusmu. Mengganti mazhab di Pengaturan akan mengubah
