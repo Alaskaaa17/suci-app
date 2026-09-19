@@ -99,7 +99,7 @@ export function PinPad({
         disabled={disabled}
         onClick={onBackspace}
         aria-label="Hapus satu angka"
-        className="flex h-[58px] items-center justify-center rounded-full text-tx2 transition hover:text-tx active:scale-95 disabled:opacity-40"
+        className={key}
       >
         <BackspaceIcon size={22} />
       </button>
