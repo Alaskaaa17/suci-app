@@ -66,11 +66,19 @@ export function Gate({ children }: { children: ReactNode }) {
 
 function Booting() {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 bg-bg">
-      <div className="flex h-[76px] w-[76px] items-center justify-center rounded-[26px] border border-rose-b bg-rose text-icon">
-        <CrescentIcon size={38} strokeWidth={1.5} />
+    <div className="flex h-full flex-col items-center justify-center gap-6 bg-bg">
+      <div className="animate-breathe flex h-[84px] w-[84px] items-center justify-center rounded-[28px] border border-rose-b bg-rose text-icon shadow-card">
+        <CrescentIcon size={42} strokeWidth={1.5} />
       </div>
-      <span className="text-[13px] text-tx2">Membuka Suci…</span>
+      <div className="flex flex-col items-center gap-2">
+        <span className="t-display text-tx">Suci</span>
+        <span className="text-[13px] text-tx2">Membuka catatanmu…</span>
+      </div>
+      <div className="loading-dots flex items-center gap-1.5" aria-hidden="true">
+        <span className="h-1.5 w-1.5 rounded-full bg-rose-b" />
+        <span className="h-1.5 w-1.5 rounded-full bg-rose-b" />
+        <span className="h-1.5 w-1.5 rounded-full bg-rose-b" />
+      </div>
     </div>
   );
 }
