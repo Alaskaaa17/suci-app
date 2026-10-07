@@ -61,7 +61,7 @@ export function Gate({ children }: { children: ReactNode }) {
     );
   }
 
-  return <PhoneFrame>{children}</PhoneFrame>;
+  return <PhoneFrame nav>{children}</PhoneFrame>;
 }
 
 function Booting() {

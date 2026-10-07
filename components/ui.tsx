@@ -256,6 +256,29 @@ export function NavRow({
   );
 }
 
+/**
+ * Wraps a stack of `NavRow`s. Vertical on a phone or tablet, same as today;
+ * reflows into a two-column grid once there's real desktop width for it.
+ */
+export function NavGrid({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cx(
+        "flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:gap-3.5",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 /* ---------------------------- controls ---------------------------------- */
 
 export function CheckRow({

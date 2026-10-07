@@ -12,7 +12,7 @@ import {
   SearchIcon,
   TargetIcon,
 } from "@/components/icons";
-import { NavRow, SectionLabel } from "@/components/ui";
+import { NavGrid, NavRow, SectionLabel } from "@/components/ui";
 import { faqCount } from "@/lib/content/faq";
 import { glossaryCount } from "@/lib/content/glossary";
 import { AMALAN } from "@/lib/content/amalan";
@@ -54,7 +54,7 @@ export default function EdukasiPage() {
         </p>
       </div>
 
-      <div className="stagger flex flex-col gap-2">
+      <NavGrid className="stagger">
         <NavRow
           href="/edukasi/dasar"
           tone="rose"
@@ -111,7 +111,7 @@ export default function EdukasiPage() {
           title="Tanya jawab"
           subtitle={`${faqCount()} pertanyaan yang sering muncul`}
         />
-      </div>
+      </NavGrid>
 
       <div className="mt-0.5">
         <SectionLabel>Untuk fasemu</SectionLabel>

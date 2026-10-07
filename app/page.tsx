@@ -28,7 +28,7 @@ export default function BerandaPage() {
   const prayersOwed = data.qadhaPrayers.filter((q) => !q.settledOn).length;
 
   return (
-    <Screen className="pt-3">
+    <Screen wide className="pt-3">
       <header className="flex items-center justify-between">
         {/* The greeting is this screen's heading — without it, Beranda had no
             h1 at all and a screen reader had nothing to announce. */}
@@ -52,65 +52,69 @@ export default function BerandaPage() {
         </div>
       </header>
 
-      <StatusCard
-        verdict={verdict}
-        analysis={analysis}
-        today={today}
-        expectedLength={analysis.averageHaidLength}
-      />
-
-      <LegalBasis
-        verdict={verdict}
-        defaultOpen={verdict.classification === Classification.HAID}
-        subtitle={
-          verdict.classification === Classification.HAID
-            ? undefined
-            : "Ketuk untuk lihat jejak penalaran"
-        }
-      />
-
-      <div className="stagger flex flex-col gap-2.5">
-        <NavRow
-          href="/ibadah"
-          tone="sage"
-          icon={<MihrabIcon size={17} />}
-          title="Ibadah hari ini"
-          subtitle={
-            exempt
-              ? `Dzikir pengganti${fastsOwed > 0 ? ` · ${fastsOwed} puasa menunggu qadha` : ""}`
-              : `Jadwal shalat${fastsOwed > 0 ? ` · ${fastsOwed} puasa menunggu qadha` : ""}${
-                  prayersOwed > 0 ? ` · ${prayersOwed} qadha shalat` : ""
-                }`
-          }
+      <div className="flex flex-col gap-3.5 lg:grid lg:grid-cols-[380px_1fr] lg:items-start lg:gap-8">
+        <StatusCard
+          verdict={verdict}
+          analysis={analysis}
+          today={today}
+          expectedLength={analysis.averageHaidLength}
         />
-        <NavRow
-          href="/edukasi"
-          tone="rose"
-          icon={<BookIcon size={17} />}
-          title="Edukasi"
-          subtitle="8 topik · glosarium · tanya jawab"
-        />
-        <NavRow
-          href="/pengaturan/kehamilan"
-          tone="peach"
-          icon={<TargetIcon size={17} />}
-          title="Kehamilan"
-          subtitle={
-            profile.specialState === "hamil"
-              ? "Aktif, lihat usia kehamilan"
-              : "Nonaktif, nyalakan bila perlu"
-          }
-        />
-      </div>
 
-      {!exempt && (
-        <div className="pt-1">
-          <PrimaryLink href="/catat" className="text-[15px]">
-            <PlusIcon size={18} />
-            Catat hari ini
-          </PrimaryLink>
+        <div className="flex flex-col gap-3.5">
+          <LegalBasis
+            verdict={verdict}
+            defaultOpen={verdict.classification === Classification.HAID}
+            subtitle={
+              verdict.classification === Classification.HAID
+                ? undefined
+                : "Ketuk untuk lihat jejak penalaran"
+            }
+          />
+
+          <div className="stagger flex flex-col gap-2.5">
+            <NavRow
+              href="/ibadah"
+              tone="sage"
+              icon={<MihrabIcon size={17} />}
+              title="Ibadah hari ini"
+              subtitle={
+                exempt
+                  ? `Dzikir pengganti${fastsOwed > 0 ? ` · ${fastsOwed} puasa menunggu qadha` : ""}`
+                  : `Jadwal shalat${fastsOwed > 0 ? ` · ${fastsOwed} puasa menunggu qadha` : ""}${
+                      prayersOwed > 0 ? ` · ${prayersOwed} qadha shalat` : ""
+                    }`
+              }
+            />
+            <NavRow
+              href="/edukasi"
+              tone="rose"
+              icon={<BookIcon size={17} />}
+              title="Edukasi"
+              subtitle="8 topik · glosarium · tanya jawab"
+            />
+            <NavRow
+              href="/pengaturan/kehamilan"
+              tone="peach"
+              icon={<TargetIcon size={17} />}
+              title="Kehamilan"
+              subtitle={
+                profile.specialState === "hamil"
+                  ? "Aktif, lihat usia kehamilan"
+                  : "Nonaktif, nyalakan bila perlu"
+              }
+            />
+          </div>
+
+          {!exempt && (
+            <div className="pt-1">
+              <PrimaryLink href="/catat" className="text-[15px]">
+                <PlusIcon size={18} />
+                Catat hari ini
+              </PrimaryLink>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </Screen>
   );
 }

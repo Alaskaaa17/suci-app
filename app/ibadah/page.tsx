@@ -14,6 +14,7 @@ import {
 import {
   cx,
   IconBubble,
+  NavGrid,
   NavRow,
   ProgressBar,
   SectionLabel,
@@ -220,8 +221,8 @@ export default function IbadahPage() {
         )}
       </section>
 
-      <div className="stagger flex flex-col gap-2.5">
-        <SectionLabel>Panduan</SectionLabel>
+      <SectionLabel>Panduan</SectionLabel>
+      <NavGrid className="stagger">
         <NavRow
           href="/ibadah/mandi-wajib"
           tone="sage"
@@ -258,7 +259,7 @@ export default function IbadahPage() {
           title="Amalan pengganti"
           subtitle="Dzikir dan sedekah saat libur shalat"
         />
-      </div>
+      </NavGrid>
     </Screen>
   );
 }

@@ -64,6 +64,8 @@ interface AppState {
   update: (fn: (draft: VaultData) => void) => Promise<void>;
   /** Overwrites the whole vault from a validated backup. Keeps the current PIN. */
   restoreVault: (next: VaultData) => Promise<void>;
+  /** Re-seals the current vault under a new PIN, or `null` to drop encryption. */
+  setPin: (pin: string | null) => Promise<void>;
   setEntry: (date: IsoDate, patch: Partial<DayEntry>) => Promise<void>;
   entryFor: (date: IsoDate) => DayEntry;
   verdictFor: (date: IsoDate) => Verdict | null;
@@ -245,6 +247,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return writeChain.current;
   }, []);
 
+  /**
+   * Turns PIN-lock on or off from Pengaturan, any time after onboarding —
+   * not just the one-time "Nanti saja" choice. Re-seals whatever is
+   * currently in memory under the new PIN (or stores it in the clear when
+   * `pin` is `null`), through the same serialized `writeChain` as `update`
+   * so this can't race a concurrent entry save.
+   */
+  const setPin = useCallback((pin: string | null) => {
+    pinRef.current = pin;
+    try {
+      if (pin) localStorage.removeItem(NO_PIN_KEY);
+      else localStorage.setItem(NO_PIN_KEY, "1");
+    } catch {
+      // Best-effort; the in-memory pinRef still governs this session's writes.
+    }
+
+    const current = dataRef.current;
+    if (!current) return Promise.resolve();
+
+    writeChain.current = writeChain.current
+      .catch(() => {})
+      .then(() => saveVault(current, pin));
+    return writeChain.current;
+  }, []);
+
   const eraseEverything = useCallback(() => {
     destroyVault();
     pinRef.current = null;
@@ -387,6 +414,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       lock,
       update,
       restoreVault,
+      setPin,
       setEntry,
       entryFor,
       verdictFor,
@@ -405,6 +433,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       lock,
       update,
       restoreVault,
+      setPin,
       setEntry,
       entryFor,
       verdictFor,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { BackspaceIcon } from "./icons";
 import { cx } from "./ui";
 
@@ -147,6 +147,46 @@ export function PinBoxes({
           </span>
         );
       })}
+    </div>
+  );
+}
+
+/** A labeled PIN entry field, boxed like `PinBoxes` but backed by a real
+ *  (invisible) input so it can be typed into, focused, and validated. Used
+ *  on both the "create PIN" onboarding step and the Pengaturan PIN toggle. */
+export function PinField({
+  label,
+  value,
+  onChange,
+  autoFocus,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  autoFocus?: boolean;
+}) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <div>
+      <div className="t-label mb-2.5 text-tx2">{label}</div>
+      <div className="relative">
+        <input
+          type="password"
+          inputMode="numeric"
+          autoComplete="off"
+          aria-label={label}
+          maxLength={PIN_LENGTH}
+          value={value}
+          autoFocus={autoFocus}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          onChange={(e) =>
+            onChange(e.target.value.replace(/\D/g, "").slice(0, PIN_LENGTH))
+          }
+          className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+        />
+        <PinBoxes value={value} focused={focused} />
+      </div>
     </div>
   );
 }

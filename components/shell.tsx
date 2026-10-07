@@ -7,6 +7,7 @@ import { THEME_KEY } from "@/lib/store/vault";
 import {
   BookIcon,
   CalendarIcon,
+  CrescentIcon,
   HomeIcon,
   MihrabIcon,
   MoonIcon,
@@ -58,48 +59,7 @@ export function ThemeToggle({ className }: { className?: string }) {
   );
 }
 
-/* ---------------------------- status bar -------------------------------- */
-
-/**
- * The mock status bar from the design. On a real phone the OS draws this, so
- * it only appears in the desktop frame — and it shows the actual time rather
- * than the mockup's frozen 9:41.
- */
-function StatusBar() {
-  const [now, setNow] = useState<string | null>(null);
-
-  useEffect(() => {
-    const tick = () =>
-      setNow(
-        new Date().toLocaleTimeString("id-ID", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        }),
-      );
-    tick();
-    const id = window.setInterval(tick, 30_000);
-    return () => window.clearInterval(id);
-  }, []);
-
-  return (
-    <div
-      // A real phone already draws its own status bar; this mock is only for
-      // the desktop frame in PhoneFrame, which is why it must stay hidden
-      // below `md` rather than always rendering as it did before.
-      className="hidden items-center justify-between px-6 pt-[15px] pb-1 text-[13px]/[1] font-semibold text-tx md:flex"
-    >
-      {/* Rendered empty until mounted so SSR and client agree. */}
-      <span>{now ?? ""}</span>
-      <span aria-hidden="true" className="flex items-center gap-[5px] opacity-75">
-        <span className="block h-2 w-[15px] rounded-[2px] border-[1.2px] border-current" />
-        <span className="block h-2.5 w-[22px] rounded-[3px] border-[1.2px] border-current" />
-      </span>
-    </div>
-  );
-}
-
-/* ---------------------------- tab bar ----------------------------------- */
+/* ---------------------------- navigation --------------------------------- */
 
 const TABS = [
   { href: "/", label: "Beranda", Icon: HomeIcon },
@@ -109,13 +69,14 @@ const TABS = [
   { href: "/edukasi", label: "Edukasi", Icon: BookIcon },
 ] as const;
 
+/** Bottom nav on a phone or a tablet. Yields to `SidebarNav` at `lg`. */
 export function TabBar() {
   const pathname = usePathname();
 
   return (
     <nav
       aria-label="Navigasi utama"
-      className="flex shrink-0 border-t border-hair bg-bg px-1.5 pt-[9px] pb-[max(22px,env(safe-area-inset-bottom))]"
+      className="flex shrink-0 border-t border-hair bg-bg px-1.5 pt-[9px] pb-[max(22px,env(safe-area-inset-bottom))] lg:hidden"
     >
       {TABS.map(({ href, label, Icon }) => {
         const active =
@@ -153,12 +114,60 @@ export function TabBar() {
   );
 }
 
+/**
+ * The desktop counterpart to `TabBar` — a persistent left rail once there's
+ * room for one. Shares `TABS` with it so the two can never drift apart.
+ * Rendered only when `PhoneFrame` is given `nav`, so it never appears on a
+ * screen with nothing to navigate to yet (locked, booting, onboarding).
+ */
+function SidebarNav() {
+  const pathname = usePathname();
+
+  return (
+    <nav
+      aria-label="Navigasi utama"
+      className="hidden shrink-0 flex-col gap-1 border-r border-hair bg-bg px-4 py-6 lg:flex lg:w-[240px]"
+    >
+      <div className="mb-6 flex items-center gap-2.5 px-2">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-b bg-rose text-icon">
+          <CrescentIcon size={18} strokeWidth={1.6} />
+        </div>
+        <span className="t-title text-tx">Suci</span>
+      </div>
+      {TABS.map(({ href, label, Icon }) => {
+        const active =
+          href === "/" ? pathname === "/" : pathname.startsWith(href);
+        return (
+          <Link
+            key={href}
+            href={href}
+            aria-current={active ? "page" : undefined}
+            className={cx(
+              "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-semibold transition",
+              active
+                ? "bg-rose text-tx"
+                : "text-tx2 hover:bg-stone-bg hover:text-tx",
+            )}
+          >
+            <Icon size={19} strokeWidth={active ? 2 : 1.7} />
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
 /* ---------------------------- screen ------------------------------------ */
 
 /**
- * One screen inside the phone. Everything between the status bar and the tab
- * bar scrolls; the design's fixed 844px frames are a canvas artefact, so real
- * content is allowed to be taller than the viewport.
+ * One screen inside the shell. The content column scrolls on its own
+ * between the sidebar/tab-bar chrome; the design's fixed 844px frames are a
+ * canvas artefact, so real content is allowed to be taller than the
+ * viewport. Capped and centered from `md` up so text and controls don't
+ * stretch edge to edge once there's real width to work with — `wide` opts a
+ * screen into more of that width for a bespoke desktop layout (Beranda,
+ * Kalender) instead of the standard reading-width column.
  */
 export function Screen({
   children,
@@ -166,6 +175,7 @@ export function Screen({
   tone = "warm",
   className,
   animate = true,
+  wide = false,
 }: {
   children?: ReactNode;
   tabBar?: boolean;
@@ -173,6 +183,8 @@ export function Screen({
   className?: string;
   /** Off for screens that manage their own entrance. */
   animate?: boolean;
+  /** Flagship screens that earn more of the desktop width than the default cap. */
+  wide?: boolean;
 }) {
   const pathname = usePathname();
   return (
@@ -182,7 +194,6 @@ export function Screen({
         tone === "stone" ? "bg-stone-bg" : "bg-bg",
       )}
     >
-      <StatusBar />
       <div
         // Keyed on the route so the entrance replays on each navigation —
         // that is what makes a drill-in feel like moving forward rather than
@@ -193,6 +204,9 @@ export function Screen({
           // Without this, children shrink below their content height inside
           // the fixed-height frame and their contents overlap.
           "[&>*]:shrink-0",
+          "md:mx-auto md:w-full md:max-w-[600px]",
+          wide ? "lg:max-w-[1040px]" : "lg:max-w-[680px]",
+          "lg:pt-8",
           animate && "animate-fade",
           className,
         )}
@@ -205,22 +219,22 @@ export function Screen({
 }
 
 /**
- * The device shell. Full-bleed on a phone; on a wide screen it becomes the
- * 390×844 frame from the canvas, sitting on the canvas colour, so the app
- * still reads as the design when someone opens it on a laptop.
+ * The app shell. Full-bleed on a phone; from `md` up the content inside
+ * gets a comfortable capped width (see `Screen`); from `lg` up a persistent
+ * sidebar takes over navigation from the bottom tab bar. `nav` gates the
+ * sidebar — pass it only once there is an authenticated app to navigate.
  */
-export function PhoneFrame({ children }: { children: ReactNode }) {
+export function PhoneFrame({
+  children,
+  nav = false,
+}: {
+  children: ReactNode;
+  nav?: boolean;
+}) {
   return (
-    <div className="flex min-h-[100dvh] justify-center bg-bg md:items-center md:bg-canvas md:py-10">
-      <div
-        className={cx(
-          "flex w-full flex-col bg-bg",
-          "h-[100dvh] md:h-[844px] md:max-h-[calc(100dvh-80px)] md:w-[390px]",
-          "md:overflow-hidden md:rounded-[30px] md:border md:border-frame-edge md:shadow-frame",
-        )}
-      >
-        {children}
-      </div>
+    <div className="flex h-[100dvh] bg-bg">
+      {nav && <SidebarNav />}
+      <div className="flex h-full min-h-0 flex-1 flex-col">{children}</div>
     </div>
   );
 }

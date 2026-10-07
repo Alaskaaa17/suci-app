@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { PinBoxes, PIN_LENGTH } from "@/components/pin-pad";
+import { PinField, PIN_LENGTH } from "@/components/pin-pad";
 import { Screen } from "@/components/shell";
 import {
   BookIcon,
@@ -337,47 +337,6 @@ function StepDots({ current }: { current: 1 | 2 | 3 }) {
         />
       ))}
       <span className="t-label ml-2 text-tx2">Langkah {current} dari 3</span>
-    </div>
-  );
-}
-
-/**
- * A six-digit field. The boxes are decorative; a real (visually hidden) input
- * sits behind them so the numeric keyboard, paste and screen readers all work.
- */
-function PinField({
-  label,
-  value,
-  onChange,
-  autoFocus,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  autoFocus?: boolean;
-}) {
-  const [focused, setFocused] = useState(false);
-  return (
-    <div>
-      <div className="t-label mb-2.5 text-tx2">{label}</div>
-      <div className="relative">
-        <input
-          type="password"
-          inputMode="numeric"
-          autoComplete="off"
-          aria-label={label}
-          maxLength={PIN_LENGTH}
-          value={value}
-          autoFocus={autoFocus}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          onChange={(e) =>
-            onChange(e.target.value.replace(/\D/g, "").slice(0, PIN_LENGTH))
-          }
-          className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
-        />
-        <PinBoxes value={value} focused={focused} />
-      </div>
     </div>
   );
 }

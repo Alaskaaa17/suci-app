@@ -8,17 +8,23 @@ import {
   CloudIcon,
   DownloadIcon,
   LinkIcon,
+  LockIcon,
   PinIcon,
   TargetIcon,
 } from "@/components/icons";
+import { PinField, PIN_LENGTH } from "@/components/pin-pad";
 import {
   BackLink,
   cx,
   IconBubble,
+  NavGrid,
   NavRow,
+  PrimaryButton,
   RadioCard,
+  SecondaryButton,
   SectionLabel,
   Segmented,
+  Toggle,
 } from "@/components/ui";
 import { todayIso } from "@/lib/date";
 import {
@@ -33,6 +39,7 @@ import {
 } from "@/lib/fiqh/prayer-times";
 import type { PrayerMethodId, SpecialState } from "@/lib/fiqh/types";
 import { useApp } from "@/lib/store/app-store";
+import { vaultIsEncrypted } from "@/lib/store/vault";
 
 const STATES: Array<{ value: SpecialState; label: string }> = [
   { value: "normal", label: "Normal" },
@@ -243,7 +250,12 @@ export default function PengaturanPage() {
           : "Semua perubahan tersimpan otomatis di ponsel ini."}
       </p>
 
-      <div className="flex flex-col gap-[7px]">
+      <div className="flex flex-col gap-2">
+        <SectionLabel>Keamanan</SectionLabel>
+        <PinSection onSaved={flash} />
+      </div>
+
+      <NavGrid>
         <NavRow
           href="/pengaturan/suami"
           tone="rose"
@@ -269,7 +281,7 @@ export default function PengaturanPage() {
             profile.specialState === "hamil" ? "Aktif" : "Nonaktif"
           }
         />
-      </div>
+      </NavGrid>
 
       <div className="mb-5 flex items-start gap-[11px] rounded-2xl border border-sage-b bg-sage px-[15px] py-[13px]">
         <IconBubble tone="sage" size={30} className="bg-bg text-sage-tx">
@@ -306,6 +318,114 @@ export default function PengaturanPage() {
         </Link>
       </div>
     </Screen>
+  );
+}
+
+/**
+ * The PIN on/off row. Onboarding's "Nanti saja" is a one-time choice; this
+ * is the same choice made reversible — flip it on or off any time later.
+ * Turning it on expands an inline copy of onboarding step 3's PIN entry;
+ * turning it off expands a confirmation, since the honest consequence
+ * ("tidak terenkripsi") is worth a deliberate second tap rather than a
+ * single flick of a switch.
+ */
+function PinSection({ onSaved }: { onSaved: () => void }) {
+  const { setPin: savePin } = useApp();
+  const [hasPin, setHasPin] = useState(() => vaultIsEncrypted());
+  const [mode, setMode] = useState<"view" | "enable" | "disable">("view");
+  const [pin, setPinValue] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const pinsMatch = pin.length === PIN_LENGTH && pin === confirm;
+  const mismatch = confirm.length === PIN_LENGTH && pin !== confirm;
+
+  const reset = () => {
+    setMode("view");
+    setPinValue("");
+    setConfirm("");
+    setBusy(false);
+  };
+
+  const enable = async () => {
+    setBusy(true);
+    await savePin(pin);
+    setHasPin(true);
+    reset();
+    onSaved();
+  };
+
+  const disable = async () => {
+    setBusy(true);
+    await savePin(null);
+    setHasPin(false);
+    reset();
+    onSaved();
+  };
+
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border border-hair px-[15px] py-[13px]">
+      <div className="flex items-center gap-3">
+        <IconBubble tone="rose">
+          <LockIcon size={16} />
+        </IconBubble>
+        <span className="flex-1">
+          <span className="block text-[14.5px]/[1.3] font-semibold text-tx">
+            Kunci dengan PIN
+          </span>
+          <span className="block text-[12.5px]/[1.4] text-tx2">
+            {hasPin
+              ? "Aktif, 6 digit"
+              : "Nonaktif — catatan tersimpan tanpa enkripsi"}
+          </span>
+        </span>
+        <Toggle
+          checked={hasPin}
+          onChange={(next) => setMode(next ? "enable" : "disable")}
+          label="Kunci dengan PIN"
+        />
+      </div>
+
+      {mode === "enable" && (
+        <div className="animate-rise flex flex-col gap-[18px] border-t border-hair pt-3">
+          <PinField label="PIN Baru" value={pin} onChange={setPinValue} autoFocus />
+          <PinField label="Ulangi PIN" value={confirm} onChange={setConfirm} />
+          {mismatch && (
+            <p className="m-0 text-[12.5px]/[1.5] text-peach-tx">
+              Dua PIN ini belum sama. Coba periksa lagi.
+            </p>
+          )}
+          <div className="flex gap-2.5">
+            <SecondaryButton tone="plain" onClick={reset} disabled={busy}>
+              Batal
+            </SecondaryButton>
+            <PrimaryButton
+              disabled={!pinsMatch || busy}
+              onClick={enable}
+            >
+              {busy ? "Menyimpan…" : "Simpan"}
+            </PrimaryButton>
+          </div>
+        </div>
+      )}
+
+      {mode === "disable" && (
+        <div className="animate-rise flex flex-col gap-3 border-t border-hair pt-3">
+          <p className="m-0 text-[12.5px]/[1.55] text-tx2">
+            Tanpa PIN, catatanmu tetap di ponsel ini tetapi tidak terenkripsi
+            — siapa pun yang memegang ponselmu bisa membukanya.
+          </p>
+          <div className="flex gap-2.5">
+            <SecondaryButton tone="plain" onClick={reset} disabled={busy}>
+              Batal
+            </SecondaryButton>
+            <SecondaryButton tone="peach" onClick={disable} disabled={busy}>
+              {busy ? "Memproses…" : "Ya, matikan PIN"}
+            </SecondaryButton>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

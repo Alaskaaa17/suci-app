@@ -51,7 +51,7 @@ export default function KalenderPage() {
   };
 
   return (
-    <Screen className="pt-3">
+    <Screen wide className="pt-3">
       <header className="flex items-center justify-between">
         <h1 className="t-headline m-0 text-tx">Kalender</h1>
         <div className="flex items-center gap-1.5">
@@ -67,62 +67,67 @@ export default function KalenderPage() {
         </div>
       </header>
 
-      <div key={`${cursor.year}-${cursor.month}`} className="animate-fade grid grid-cols-7 gap-[5px]">
-        {WEEKDAY_HEADERS.map((d) => (
-          <span
-            key={d}
-            className="pb-1 text-center text-[10.5px]/[1] font-medium tracking-[.06em] text-tx2 uppercase"
-          >
-            {d}
-          </span>
-        ))}
-
-        {cells.map((date, i) =>
-          date === null ? (
-            <span key={`blank-${i}`} className="h-[52px]" />
-          ) : (
-            <DayCell
-              key={date}
-              date={date}
-              today={today}
-              status={rulingFor(analysis, date).classification}
-              onSelect={() => router.push(`/catat?tanggal=${date}`)}
-            />
-          ),
-        )}
-      </div>
-
-      <section className="flex flex-col gap-2.5 rounded-[18px] border border-hair bg-bg px-4 py-3.5 shadow-card">
-        <div className="t-label text-tx2">Keterangan</div>
-        <ul className="m-0 grid list-none grid-cols-2 gap-x-3 gap-y-[9px] p-0">
-          {LEGEND.map((status) => (
-            <li key={status} className="flex items-center gap-2">
-              <span
-                className={cx(
-                  "flex h-5 w-5 items-center justify-center rounded-[7px] border",
-                  statusSurface(status),
-                )}
-              >
-                <StatusGlyph status={status} size={6} />
-              </span>
-              <span className="text-xs/[1.2] font-medium text-tx">
-                {STATUS_LABEL[status]}
-                {STATUS_GLYPH_DESCRIPTION[status] && (
-                  <span className="text-tx2">
-                    {" · "}
-                    {STATUS_GLYPH_DESCRIPTION[status]}
-                  </span>
-                )}
-              </span>
-            </li>
+      <div className="flex flex-col gap-3.5 lg:grid lg:grid-cols-[1fr_260px] lg:items-start lg:gap-8">
+        <div
+          key={`${cursor.year}-${cursor.month}`}
+          className="animate-fade grid grid-cols-7 gap-[5px]"
+        >
+          {WEEKDAY_HEADERS.map((d) => (
+            <span
+              key={d}
+              className="pb-1 text-center text-[10.5px]/[1] font-medium tracking-[.06em] text-tx2 uppercase"
+            >
+              {d}
+            </span>
           ))}
-        </ul>
-        <div className="h-px bg-hair" />
-        <p className="m-0 text-xs/[1.5] text-tx2">
-          Garis putus-putus tanpa isian = perkiraan, belum terjadi. Ketuk
-          tanggal mana pun untuk melihat atau mengubah catatannya.
-        </p>
-      </section>
+
+          {cells.map((date, i) =>
+            date === null ? (
+              <span key={`blank-${i}`} className="h-[52px] lg:h-16" />
+            ) : (
+              <DayCell
+                key={date}
+                date={date}
+                today={today}
+                status={rulingFor(analysis, date).classification}
+                onSelect={() => router.push(`/catat?tanggal=${date}`)}
+              />
+            ),
+          )}
+        </div>
+
+        <section className="flex flex-col gap-2.5 rounded-[18px] border border-hair bg-bg px-4 py-3.5 shadow-card">
+          <div className="t-label text-tx2">Keterangan</div>
+          <ul className="m-0 grid list-none grid-cols-2 gap-x-3 gap-y-[9px] p-0 lg:grid-cols-1">
+            {LEGEND.map((status) => (
+              <li key={status} className="flex items-center gap-2">
+                <span
+                  className={cx(
+                    "flex h-5 w-5 items-center justify-center rounded-[7px] border",
+                    statusSurface(status),
+                  )}
+                >
+                  <StatusGlyph status={status} size={6} />
+                </span>
+                <span className="text-xs/[1.2] font-medium text-tx">
+                  {STATUS_LABEL[status]}
+                  {STATUS_GLYPH_DESCRIPTION[status] && (
+                    <span className="text-tx2">
+                      {" · "}
+                      {STATUS_GLYPH_DESCRIPTION[status]}
+                    </span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <div className="h-px bg-hair" />
+          <p className="m-0 text-xs/[1.5] text-tx2 lg:text-left">
+            Garis putus-putus tanpa isian = perkiraan, belum terjadi. Ketuk
+            tanggal mana pun untuk melihat atau mengubah catatannya.
+          </p>
+        </section>
+      </div>
     </Screen>
   );
 }
@@ -170,7 +175,7 @@ function DayCell({
       // The visible glyph is decorative, so the full meaning goes on the label.
       aria-label={`${dayNumber}, ${STATUS_LABEL[status]}${isToday ? ", hari ini" : ""}`}
       className={cx(
-        "flex h-[52px] flex-col items-center justify-center gap-1 rounded-[15px] border transition",
+        "flex h-[52px] flex-col items-center justify-center gap-1 rounded-[15px] border transition lg:h-16",
         statusSurface(status),
         isToday && "border-2 border-solid",
         "duration-150 hover:brightness-95 active:scale-90",
